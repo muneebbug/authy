@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:authy/domain/entities/account.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
-import 'package:authy/presentation/widgets/account_item.dart';
-import 'package:authy/presentation/screens/add_account_screen.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
-import 'package:authy/core/theme/app_theme.dart';
+import 'package:sentinel/domain/entities/account.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
+import 'package:sentinel/presentation/widgets/account_item.dart';
+import 'package:sentinel/presentation/screens/add_account_screen.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/core/theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
 
 /// Home screen that displays all accounts with Nothing OS design
@@ -63,7 +63,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: Text('AUTHY', style: GoogleFonts.spaceMono(letterSpacing: 1.0)),
+        title: Text(
+          'SENTINEL',
+          style: GoogleFonts.spaceMono(letterSpacing: 1.0),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),

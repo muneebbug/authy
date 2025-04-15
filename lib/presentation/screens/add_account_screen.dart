@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:base32/base32.dart';
-import 'package:authy/core/utils/totp_service.dart';
-import 'package:authy/domain/entities/account.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
+import 'package:sentinel/domain/entities/account.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for adding a new TOTP account with Nothing OS-inspired design
 class AddAccountScreen extends ConsumerStatefulWidget {

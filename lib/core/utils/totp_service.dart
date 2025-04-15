@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:base32/base32.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:authy/domain/entities/account.dart';
+import 'package:sentinel/domain/entities/account.dart';
 import 'package:ntp/ntp.dart';
 
 /// Service for generating TOTP codes according to RFC 6238

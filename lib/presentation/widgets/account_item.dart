@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:authy/domain/entities/account.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
-import 'package:authy/core/utils/totp_service.dart';
+import 'package:sentinel/domain/entities/account.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
 
 /// Widget to display a 2FA account in the list with Nothing OS style
 class AccountItem extends ConsumerStatefulWidget {

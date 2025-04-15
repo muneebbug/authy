@@ -1,7 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:authy/domain/entities/account.dart';
-import 'package:authy/data/models/account_model.dart';
-import 'package:authy/core/utils/secure_storage_service.dart';
+import 'package:sentinel/domain/entities/account.dart';
+import 'package:sentinel/data/models/account_model.dart';
+import 'package:sentinel/core/utils/secure_storage_service.dart';
 
 /// Repository for interacting with Hive storage
 class HiveRepository {

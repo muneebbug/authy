@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/domain/entities/account.dart';
-import 'package:authy/domain/repositories/account_repository.dart';
-import 'package:authy/core/utils/hive_repository.dart';
-import 'package:authy/core/utils/totp_service.dart';
-import 'package:authy/core/providers/totp_service_provider.dart';
+import 'package:sentinel/domain/entities/account.dart';
+import 'package:sentinel/domain/repositories/account_repository.dart';
+import 'package:sentinel/core/utils/hive_repository.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
+import 'package:sentinel/core/providers/totp_service_provider.dart';
 
 /// Provider for account repository
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {

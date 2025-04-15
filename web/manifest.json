@@ -1,6 +1,6 @@
 {
-    "name": "authy",
-    "short_name": "authy",
+    "name": "sentinel",
+    "short_name": "sentinel",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

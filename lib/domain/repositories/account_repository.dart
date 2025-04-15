@@ -1,4 +1,4 @@
-import 'package:authy/domain/entities/account.dart';
+import 'package:sentinel/domain/entities/account.dart';
 
 /// Repository interface for account management
 abstract class AccountRepository {

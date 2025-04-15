@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/core/utils/totp_service.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
 
 /// Provider for the TOTP service
 final totpServiceProvider = FutureProvider<TOTPService>((ref) async {

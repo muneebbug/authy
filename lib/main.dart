@@ -3,21 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:authy/core/utils/secure_storage_service.dart';
-import 'package:authy/core/utils/totp_service.dart';
-import 'package:authy/core/utils/hive_repository.dart';
-import 'package:authy/core/utils/auth_service.dart';
-import 'package:authy/core/utils/settings_service.dart';
-import 'package:authy/data/repositories/account_repository_impl.dart';
-import 'package:authy/domain/repositories/account_repository.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
-import 'package:authy/presentation/providers/auth_provider.dart';
-import 'package:authy/presentation/providers/timer_provider.dart';
-import 'package:authy/presentation/screens/auth_screen.dart';
-import 'package:authy/presentation/screens/home_screen.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
-import 'package:authy/core/theme/app_theme.dart';
-import 'package:authy/core/utils/app_lifecycle_observer.dart';
+import 'package:sentinel/core/utils/secure_storage_service.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
+import 'package:sentinel/core/utils/hive_repository.dart';
+import 'package:sentinel/core/utils/auth_service.dart';
+import 'package:sentinel/core/utils/settings_service.dart';
+import 'package:sentinel/data/repositories/account_repository_impl.dart';
+import 'package:sentinel/domain/repositories/account_repository.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
+import 'package:sentinel/presentation/providers/auth_provider.dart';
+import 'package:sentinel/presentation/providers/timer_provider.dart';
+import 'package:sentinel/presentation/screens/auth_screen.dart';
+import 'package:sentinel/presentation/screens/home_screen.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/core/theme/app_theme.dart';
+import 'package:sentinel/core/utils/app_lifecycle_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,20 +73,20 @@ void main() async {
         // Override the Hive repository with our initialized instance
         hiveRepositoryProvider.overrideWithValue(hiveRepository),
       ],
-      child: const AuthyApp(),
+      child: const SentinelApp(),
     ),
   );
 }
 
 /// Main application widget
-class AuthyApp extends ConsumerStatefulWidget {
-  const AuthyApp({super.key});
+class SentinelApp extends ConsumerStatefulWidget {
+  const SentinelApp({super.key});
 
   @override
-  ConsumerState<AuthyApp> createState() => _AuthyAppState();
+  ConsumerState<SentinelApp> createState() => _SentinelAppState();
 }
 
-class _AuthyAppState extends ConsumerState<AuthyApp>
+class _SentinelAppState extends ConsumerState<SentinelApp>
     with WidgetsBindingObserver {
   late AppLifecycleObserver _lifecycleObserver;
   bool _isAppLocked = false;
@@ -226,7 +226,7 @@ class _AuthyAppState extends ConsumerState<AuthyApp>
     // Don't show anything until initialization is complete to prevent flash
     if (!_isInitialized) {
       return MaterialApp(
-        title: 'Authy',
+        title: 'Sentinel',
         theme: AppTheme.buildTheme(context, accentColorIndex),
         darkTheme: AppTheme.buildTheme(context, accentColorIndex),
         themeMode: ThemeMode.dark,
@@ -239,7 +239,7 @@ class _AuthyAppState extends ConsumerState<AuthyApp>
     }
 
     return MaterialApp(
-      title: 'Authy',
+      title: 'Sentinel',
       theme: AppTheme.buildTheme(context, accentColorIndex),
       darkTheme: AppTheme.buildTheme(context, accentColorIndex),
       themeMode: ThemeMode.dark, // Always use dark theme for NothingOS look

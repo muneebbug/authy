@@ -1,4 +1,4 @@
-# authy
+# sentinel
 
 A new Flutter project.
 

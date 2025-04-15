@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/core/utils/settings_service.dart';
+import 'package:sentinel/core/utils/settings_service.dart';
 
 /// Provider for the current accent color index
 final accentColorProvider = StateNotifierProvider<AccentColorNotifier, int>(

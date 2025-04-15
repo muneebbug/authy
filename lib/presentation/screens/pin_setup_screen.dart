@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:authy/presentation/providers/auth_provider.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/presentation/providers/auth_provider.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for setting up PIN authentication
 class PinSetupScreen extends ConsumerStatefulWidget {
@@ -15,6 +15,7 @@ class PinSetupScreen extends ConsumerStatefulWidget {
 class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   final _pinController = TextEditingController();
   final _confirmPinController = TextEditingController();
+  final _confirmFocusNode = FocusNode();
   String _errorMessage = '';
   bool _isConfirming = false;
   String _firstPin = '';
@@ -23,6 +24,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   void dispose() {
     _pinController.dispose();
     _confirmPinController.dispose();
+    _confirmFocusNode.dispose();
     super.dispose();
   }
 
@@ -39,6 +41,11 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       _isConfirming = true;
       _errorMessage = '';
       _pinController.clear();
+    });
+
+    // Focus on the confirmation field
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _confirmFocusNode.requestFocus();
     });
   }
 
@@ -123,6 +130,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                 TextField(
                   controller:
                       _isConfirming ? _confirmPinController : _pinController,
+                  focusNode: _isConfirming ? _confirmFocusNode : null,
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   obscureText: true,

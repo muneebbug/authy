@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:authy/domain/entities/account.dart';
+import 'package:sentinel/domain/entities/account.dart';
 
 part 'account_model.g.dart';
 

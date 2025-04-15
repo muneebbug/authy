@@ -1,4 +1,4 @@
-package com.example.authy
+package com.example.sentinel
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine

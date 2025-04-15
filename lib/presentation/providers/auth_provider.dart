@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/core/utils/auth_service.dart';
-import 'package:authy/core/utils/settings_service.dart';
+import 'package:sentinel/core/utils/auth_service.dart';
+import 'package:sentinel/core/utils/settings_service.dart';
 
 /// Provider for the current authentication method
 final authMethodProvider =

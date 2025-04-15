@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/core/utils/auth_service.dart';
-import 'package:authy/presentation/providers/auth_provider.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/core/utils/auth_service.dart';
+import 'package:sentinel/presentation/providers/auth_provider.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for authenticating the user with PIN or biometric
 class AuthScreen extends ConsumerStatefulWidget {

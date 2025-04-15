@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:authy/presentation/providers/account_provider.dart';
+import 'package:sentinel/presentation/providers/account_provider.dart';
 
 /// A provider that updates the currentTimestampProvider every second
 final timerProvider = Provider<void>((ref) {

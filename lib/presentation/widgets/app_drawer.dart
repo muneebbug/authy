@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:authy/core/theme/app_theme.dart';
-import 'package:authy/presentation/screens/settings_screen.dart';
+import 'package:sentinel/core/theme/app_theme.dart';
+import 'package:sentinel/presentation/screens/settings_screen.dart';
 
 /// Drawer widget with NothingOS style
 class AppDrawer extends ConsumerWidget {
@@ -42,7 +42,7 @@ class AppDrawer extends ConsumerWidget {
                       ),
                       child: Center(
                         child: Text(
-                          'A',
+                          'S',
                           style: GoogleFonts.spaceMono(
                             color: accentColor,
                             fontSize: 32,
@@ -53,7 +53,7 @@ class AppDrawer extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'AUTHY',
+                      'SENTINEL',
                       style: GoogleFonts.spaceMono(
                         fontSize: 20,
                         letterSpacing: 2.0,

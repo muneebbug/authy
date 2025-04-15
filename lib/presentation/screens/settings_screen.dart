@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:authy/core/theme/app_theme.dart';
-import 'package:authy/core/utils/auth_service.dart';
-import 'package:authy/presentation/providers/auth_provider.dart';
-import 'package:authy/presentation/screens/pin_setup_screen.dart';
-import 'package:authy/presentation/widgets/dot_pattern_background.dart';
-import 'package:authy/core/utils/settings_service.dart';
+import 'package:sentinel/core/theme/app_theme.dart';
+import 'package:sentinel/core/utils/auth_service.dart';
+import 'package:sentinel/presentation/providers/auth_provider.dart';
+import 'package:sentinel/presentation/screens/pin_setup_screen.dart';
+import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
+import 'package:sentinel/core/utils/settings_service.dart';
 import 'dart:convert';
 
 /// Settings screen with NothingOS design
@@ -35,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.menu, size: 24),
+          icon: const Icon(Icons.arrow_back, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
