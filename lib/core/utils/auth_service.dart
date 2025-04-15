@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:authy/core/utils/settings_service.dart';
 
 /// Authentication methods supported by the app
 enum AuthMethod { none, pin, biometric }
@@ -9,8 +10,37 @@ enum AuthMethod { none, pin, biometric }
 class AuthService {
   static const String _pinKey = 'auth_pin';
   static const String _methodKey = 'auth_method';
+  static const String _appLockKey = 'app_lock_enabled';
   static final _secureStorage = const FlutterSecureStorage();
   static final _localAuth = LocalAuthentication();
+
+  /// Initialize and migrate settings if needed
+  static Future<void> initializeAndMigrate() async {
+    // Migrate existing settings to the new settings service
+    await _migrateToSettingsService();
+  }
+
+  /// Migrate existing settings to the SettingsService
+  static Future<void> _migrateToSettingsService() async {
+    // Migrate auth method
+    final authMethod = await getAuthMethod();
+    String methodString;
+    switch (authMethod) {
+      case AuthMethod.pin:
+        methodString = 'pin';
+        break;
+      case AuthMethod.biometric:
+        methodString = 'biometric';
+        break;
+      default:
+        methodString = 'none';
+    }
+    await SettingsService.setSetting('security.authMethod', methodString);
+
+    // Migrate app lock setting
+    final appLockEnabled = await getSecureStorageValue(_appLockKey) == 'true';
+    await SettingsService.setSetting('security.appLockEnabled', appLockEnabled);
+  }
 
   /// Get the current authentication method
   static Future<AuthMethod> getAuthMethod() async {
@@ -104,5 +134,21 @@ class AuthService {
   static Future<void> removeAuthentication() async {
     await _secureStorage.delete(key: _pinKey);
     await setAuthMethod(AuthMethod.none);
+  }
+
+  /// Check if a PIN is set
+  static Future<bool> hasPin() async {
+    final pin = await _secureStorage.read(key: _pinKey);
+    return pin != null && pin.isNotEmpty;
+  }
+
+  /// Get a value from secure storage
+  static Future<String?> getSecureStorageValue(String key) async {
+    return await _secureStorage.read(key: key);
+  }
+
+  /// Set a value in secure storage
+  static Future<void> setSecureStorageValue(String key, String value) async {
+    await _secureStorage.write(key: key, value: value);
   }
 }

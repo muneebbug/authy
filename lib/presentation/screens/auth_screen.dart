@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:authy/core/utils/auth_service.dart';
+import 'package:authy/presentation/providers/auth_provider.dart';
 import 'package:authy/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for authenticating the user with PIN or biometric
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget {
   final Widget child;
+  final bool checkAppLock;
 
-  const AuthScreen({Key? key, required this.child}) : super(key: key);
+  const AuthScreen({Key? key, required this.child, this.checkAppLock = true})
+    : super(key: key);
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isAuthenticated = false;
   bool _isBiometricAvailable = false;
   AuthMethod _authMethod = AuthMethod.none;
@@ -33,24 +37,64 @@ class _AuthScreenState extends State<AuthScreen> {
 
   /// Initialize authentication
   Future<void> _initAuth() async {
-    final authMethod = await AuthService.getAuthMethod();
-    final biometricAvailable = await AuthService.isBiometricAvailable();
+    // Don't proceed if not mounted (prevents state changes after dispose)
+    if (!mounted) return;
+
+    // Get auth method from provider
+    final authMethod = ref.read(authMethodProvider);
+
+    // Check biometric availability
+    final biometricAvailable = await ref.read(
+      biometricAvailableProvider.future,
+    );
+
+    // Check app lock setting
+    final appLockEnabled = ref.read(appLockProvider);
+
+    // Don't update state if not mounted (prevents state changes after dispose)
+    if (!mounted) return;
 
     setState(() {
       _authMethod = authMethod;
       _isBiometricAvailable = biometricAvailable;
     });
 
-    // If no authentication is required, proceed directly
+    // Skip authentication if:
+    // 1. No auth method set
     if (_authMethod == AuthMethod.none) {
-      setState(() {
-        _isAuthenticated = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isAuthenticated = true;
+        });
+      }
+      return;
+    }
+
+    // For app lock behavior - this indicates we're checking after app was in background
+    if (widget.checkAppLock) {
+      // Only skip auth if app lock is explicitly disabled
+      if (!appLockEnabled) {
+        if (mounted) {
+          setState(() {
+            _isAuthenticated = true;
+          });
+        }
+        return;
+      }
+    } else {
+      // Not checking app lock, skip authentication for non-lock screens
+      if (mounted) {
+        setState(() {
+          _isAuthenticated = true;
+        });
+      }
       return;
     }
 
     // If biometric auth is enabled, try it immediately
-    if (_authMethod == AuthMethod.biometric) {
+    if (_authMethod == AuthMethod.biometric &&
+        _isBiometricAvailable &&
+        mounted) {
       _authenticateWithBiometrics();
     }
   }
@@ -95,6 +139,23 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch the auth providers to react to changes
+    final authMethod = ref.watch(authMethodProvider);
+    final biometricAvailable =
+        ref.watch(biometricAvailableProvider).valueOrNull ?? false;
+
+    // Also watch app lock status
+    final appLockEnabled = ref.watch(appLockProvider);
+
+    // Update state if auth method changes
+    if (authMethod != _authMethod ||
+        biometricAvailable != _isBiometricAvailable) {
+      setState(() {
+        _authMethod = authMethod;
+        _isBiometricAvailable = biometricAvailable;
+      });
+    }
+
     // If already authenticated, show the child
     if (_isAuthenticated) {
       return widget.child;
