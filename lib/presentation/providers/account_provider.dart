@@ -114,6 +114,16 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
     await _repository.deleteAccount(account);
     state = state.where((a) => a.id != account.id).toList();
   }
+
+  /// Generate a TOTP code for an account
+  Future<String> generateCode(Account account) async {
+    // Update the last used timestamp
+    final updatedAccount = account.copyWith(lastUsedAt: DateTime.now());
+    await updateAccount(updatedAccount);
+
+    // Generate the TOTP code
+    return TOTPService.generateCode(account);
+  }
 }
 
 /// Notifier for legacy account management (for backward compatibility)

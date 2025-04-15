@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:base32/base32.dart';
 import 'package:authy/core/utils/totp_service.dart';
@@ -72,7 +73,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
       appBar: AppBar(
         title: Text(
           _showQrScanner ? 'Scan QR Code' : 'Add Account',
-          style: const TextStyle(fontFamily: 'SpaceMono', letterSpacing: 1.0),
+          style: GoogleFonts.spaceMono(letterSpacing: 1.0),
         ),
         backgroundColor: Colors.black,
         leading: IconButton(
@@ -172,9 +173,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                   side: BorderSide(color: Colors.grey.shade700),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Manual Entry',
-                style: TextStyle(fontFamily: 'SpaceMono', letterSpacing: 1.0),
+                style: GoogleFonts.spaceMono(letterSpacing: 1.0),
               ),
             ),
           ),
@@ -316,9 +317,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(
+                            style: GoogleFonts.spaceMono(
                               color: Colors.red.shade400,
-                              fontFamily: 'SpaceMono',
                             ),
                           ),
                         ),
@@ -347,10 +347,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                                 color: Colors.black,
                               ),
                             )
-                            : const Text(
+                            : Text(
                               'SAVE ACCOUNT',
-                              style: TextStyle(
-                                fontFamily: 'SpaceMono',
+                              style: GoogleFonts.spaceMono(
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                               ),
@@ -371,8 +370,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
       children: [
         Text(
           'Add new authenticator',
-          style: TextStyle(
-            fontFamily: 'SpaceMono',
+          style: GoogleFonts.spaceMono(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.grey[300],
@@ -382,8 +380,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
         const SizedBox(height: 8),
         Text(
           'Enter the details of your 2FA account',
-          style: TextStyle(
-            fontFamily: 'SpaceMono',
+          style: GoogleFonts.spaceMono(
             fontSize: 14,
             color: Colors.grey[500],
             letterSpacing: 0.3,
@@ -408,8 +405,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontFamily: 'SpaceMono',
+          style: GoogleFonts.spaceMono(
             fontSize: 12,
             color: Colors.grey[400],
             letterSpacing: 1.0,
@@ -420,10 +416,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.grey[600],
-              fontFamily: 'SpaceMono',
-            ),
+            hintStyle: GoogleFonts.spaceMono(color: Colors.grey[600]),
             filled: true,
             fillColor: theme.colorScheme.surface,
             border: OutlineInputBorder(
@@ -446,7 +439,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                     )
                     : null,
           ),
-          style: const TextStyle(fontFamily: 'SpaceMono', letterSpacing: 0.5),
+          style: GoogleFonts.spaceMono(letterSpacing: 0.5),
           validator: validator,
         ),
       ],

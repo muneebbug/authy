@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:authy/domain/entities/account.dart';
 import 'package:authy/presentation/providers/account_provider.dart';
 import 'package:authy/presentation/widgets/account_item.dart';
@@ -26,10 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Home',
-          style: TextStyle(fontFamily: 'SpaceMono', letterSpacing: 1.0),
-        ),
+        title: Text('Home', style: GoogleFonts.spaceMono(letterSpacing: 1.0)),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -116,8 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Empty state text
           Text(
             'No accounts added yet',
-            style: TextStyle(
-              fontFamily: 'SpaceMono',
+            style: GoogleFonts.spaceMono(
               fontSize: 16,
               color: Colors.grey[400],
               letterSpacing: 0.5,
@@ -126,8 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 8),
           Text(
             'Tap + to add your first account',
-            style: TextStyle(
-              fontFamily: 'SpaceMono',
+            style: GoogleFonts.spaceMono(
               fontSize: 14,
               color: Colors.grey[600],
               letterSpacing: 0.3,
@@ -145,9 +142,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             child: Text(
               'ADD ACCOUNT',
-              style: TextStyle(
+              style: GoogleFonts.spaceMono(
                 color: accentColor,
-                fontFamily: 'SpaceMono',
                 letterSpacing: 1.5,
                 fontSize: 14,
               ),
@@ -170,34 +166,282 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: accounts.length,
         itemBuilder: (context, index) {
           final account = accounts[index];
-          return Dismissible(
-            key: Key(account.id),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              decoration: BoxDecoration(
-                color: Colors.red.shade900,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.delete_outline, color: Colors.white),
-            ),
-            confirmDismiss: (direction) async {
-              return await _confirmDeleteDialog(account);
+          return AccountItem(
+            account: account,
+            onTap: () {
+              // Copy the code to clipboard
+              _copyTOTPCode(account);
             },
-            onDismissed: (direction) {
-              _deleteAccount(account);
+            onLongPress: () {
+              // Show bottom sheet with options
+              _showAccountOptionsSheet(account);
             },
-            child: AccountItem(
-              account: account,
-              onTap: () {
-                // TODO: Show account details or copy code
-              },
-            ),
           );
         },
       ),
     );
+  }
+
+  /// Copy the TOTP code to clipboard
+  void _copyTOTPCode(Account account) async {
+    // Show loading indicator
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.showSnackBar(
+      const SnackBar(
+        content: Text('Copying code...'),
+        duration: Duration(milliseconds: 300),
+      ),
+    );
+
+    try {
+      // Generate code
+      final code = await ref
+          .read(accountsProvider.notifier)
+          .generateCode(account);
+
+      // Copy to clipboard
+      await Clipboard.setData(ClipboardData(text: code));
+
+      if (mounted) {
+        // Show success message with NothingOS style
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Code copied to clipboard',
+                  style: GoogleFonts.spaceMono(color: Colors.white),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.grey.shade900,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // Show error message
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Failed to copy code: $e'),
+            backgroundColor: Colors.red.shade900,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show bottom sheet with account options in NothingOS style
+  void _showAccountOptionsSheet(Account account) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            border: Border.all(color: Colors.grey.shade800, width: 1),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sheet handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 16),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade600,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+
+                // Account info
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      // Account icon
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _getColorForAccount(account),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            account.issuer.isEmpty
+                                ? '?'
+                                : account.issuer[0].toUpperCase(),
+                            style: TextStyle(
+                              color: _getColorForAccount(account),
+                              fontSize: 16,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Account details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              account.issuer,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              account.accountName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[400],
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(color: Colors.grey, height: 1, thickness: 0.5),
+
+                // Options
+                _buildOptionTile(
+                  icon: Icons.copy,
+                  label: 'Copy Code',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _copyTOTPCode(account);
+                  },
+                  accentColor: accentColor,
+                ),
+
+                _buildOptionTile(
+                  icon: Icons.delete_outline,
+                  label: 'Delete Account',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteAccount(account);
+                  },
+                  destructive: true,
+                ),
+
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build an option tile for the bottom sheet
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? accentColor,
+    bool destructive = false,
+  }) {
+    final color = destructive ? Colors.red.shade400 : accentColor;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: GoogleFonts.spaceMono(
+                fontSize: 16,
+                color: destructive ? Colors.red.shade400 : Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Get color for account avatar based on issuer name
+  Color _getColorForAccount(Account account) {
+    // Select dot color based on issuer name (first letter) for variety
+    switch (account.issuer.toLowerCase().isEmpty
+        ? 'x'
+        : account.issuer.toLowerCase()[0]) {
+      case 'a':
+      case 'b':
+      case 'c':
+        return Colors.blue;
+      case 'd':
+      case 'e':
+      case 'f':
+        return Colors.pink;
+      case 'g':
+      case 'h':
+      case 'i':
+        return Colors.amber;
+      case 'j':
+      case 'k':
+      case 'l':
+        return Colors.green;
+      case 'm':
+      case 'n':
+      case 'o':
+        return Colors.purple;
+      case 'p':
+      case 'q':
+      case 'r':
+        return Colors.red;
+      case 's':
+      case 't':
+      case 'u':
+        return Colors.teal;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// Confirm and delete an account
+  void _confirmDeleteAccount(Account account) async {
+    final shouldDelete = await _confirmDeleteDialog(account);
+    if (shouldDelete && mounted) {
+      _deleteAccount(account);
+    }
   }
 
   /// Navigate to add account screen
@@ -240,35 +484,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: const Text(
+              title: Text(
                 'Delete Account',
-                style: TextStyle(fontFamily: 'SpaceMono', letterSpacing: 0.5),
+                style: GoogleFonts.spaceMono(letterSpacing: 0.5),
               ),
               content: Text(
                 'Are you sure you want to delete ${account.issuer} (${account.accountName})?',
-                style: const TextStyle(
-                  fontFamily: 'SpaceMono',
-                  letterSpacing: 0.3,
-                ),
+                style: GoogleFonts.spaceMono(letterSpacing: 0.3),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text(
+                  child: Text(
                     'CANCEL',
-                    style: TextStyle(
-                      fontFamily: 'SpaceMono',
-                      letterSpacing: 1.0,
-                    ),
+                    style: GoogleFonts.spaceMono(letterSpacing: 1.0),
                   ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   child: Text(
                     'DELETE',
-                    style: TextStyle(
+                    style: GoogleFonts.spaceMono(
                       color: Colors.red.shade400,
-                      fontFamily: 'SpaceMono',
                       letterSpacing: 1.0,
                     ),
                   ),

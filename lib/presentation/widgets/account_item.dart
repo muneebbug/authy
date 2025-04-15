@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:authy/domain/entities/account.dart';
 import 'package:authy/presentation/providers/account_provider.dart';
 import 'package:authy/core/utils/totp_service.dart';
@@ -13,9 +14,16 @@ class AccountItem extends ConsumerStatefulWidget {
   /// Callback when the account is tapped
   final VoidCallback? onTap;
 
+  /// Callback when the account is long pressed
+  final VoidCallback? onLongPress;
+
   /// Constructor
-  const AccountItem({Key? key, required this.account, this.onTap})
-    : super(key: key);
+  const AccountItem({
+    Key? key,
+    required this.account,
+    this.onTap,
+    this.onLongPress,
+  }) : super(key: key);
 
   @override
   ConsumerState<AccountItem> createState() => _AccountItemState();
@@ -129,6 +137,7 @@ class _AccountItemState extends ConsumerState<AccountItem> {
     return Card(
       child: InkWell(
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -282,10 +291,10 @@ class _AccountItemState extends ConsumerState<AccountItem> {
     if (_currentCode == null) {
       return Text(
         '------',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          fontFamily: 'SpaceMono',
+        style: GoogleFonts.spaceMono(
           fontSize: 24,
           letterSpacing: 3,
+          textStyle: Theme.of(context).textTheme.titleLarge,
         ),
       );
     }
@@ -299,11 +308,11 @@ class _AccountItemState extends ConsumerState<AccountItem> {
         for (int i = 0; i < code.length; i++) ...[
           Text(
             code[i],
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: 'SpaceMono',
+            style: GoogleFonts.spaceMono(
               fontSize: 24,
               fontWeight: FontWeight.normal,
               letterSpacing: 3,
+              textStyle: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           // Add space between characters, but not after the last one
