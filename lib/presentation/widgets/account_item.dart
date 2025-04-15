@@ -149,7 +149,7 @@ class _AccountItemState extends ConsumerState<AccountItem> {
                         Text(
                           widget.account.issuer,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
                           ),
@@ -157,26 +157,10 @@ class _AccountItemState extends ConsumerState<AccountItem> {
                         Text(
                           widget.account.accountName,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: Colors.grey[400],
                             letterSpacing: 0.3,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Time indicator
-                  SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: Stack(
-                      children: [
-                        CircularProgressIndicator(
-                          value: _remainingSeconds / widget.account.period,
-                          backgroundColor: Colors.grey.shade800,
-                          strokeWidth: 1.5,
-                          color: accentColor,
                         ),
                       ],
                     ),
@@ -186,16 +170,35 @@ class _AccountItemState extends ConsumerState<AccountItem> {
 
               const SizedBox(height: 16),
 
-              // TOTP code dots
-              Center(
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 1.5),
-                        )
-                        : _buildNothingStyleCode(),
+              // TOTP code and timer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // TOTP code
+                  _isLoading
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                      )
+                      : _buildNothingStyleCode(),
+
+                  // Time indicator
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Stack(
+                      children: [
+                        CircularProgressIndicator(
+                          value: _remainingSeconds / widget.account.period,
+                          backgroundColor: Colors.grey.shade800,
+                          strokeWidth: 2,
+                          color: accentColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -252,8 +255,8 @@ class _AccountItemState extends ConsumerState<AccountItem> {
     }
 
     return Container(
-      width: 40,
-      height: 40,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         color: Colors.black,
         shape: BoxShape.circle,
@@ -277,34 +280,36 @@ class _AccountItemState extends ConsumerState<AccountItem> {
   /// Build the Nothing OS style TOTP code display with dot-matrix numbers
   Widget _buildNothingStyleCode() {
     if (_currentCode == null) {
-      return Center(
-        child: Text(
-          '------',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontFamily: 'monospace'),
+      return Text(
+        '------',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontFamily: 'SpaceMono',
+          fontSize: 24,
+          letterSpacing: 3,
         ),
       );
     }
 
     final code = _currentCode!;
-    // Split TOTP code into two groups for better readability
-    // For example, '123456' -> '123 456'
-    final codeLength = code.length;
-    final firstHalf = code.substring(0, codeLength ~/ 2);
-    final secondHalf = code.substring(codeLength ~/ 2);
 
-    return RichText(
-      text: TextSpan(
-        style: Theme.of(
-          context,
-        ).textTheme.headlineSmall?.copyWith(fontFamily: 'monospace'),
-        children: [
-          TextSpan(text: firstHalf),
-          TextSpan(text: ' '),
-          TextSpan(text: secondHalf),
+    // Instead of using RichText, display each digit separately with spacing
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < code.length; i++) ...[
+          Text(
+            code[i],
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontFamily: 'SpaceMono',
+              fontSize: 24,
+              fontWeight: FontWeight.normal,
+              letterSpacing: 3,
+            ),
+          ),
+          // Add space between characters, but not after the last one
+          if (i < code.length - 1) const SizedBox(width: 12),
         ],
-      ),
+      ],
     );
   }
 }
