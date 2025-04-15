@@ -61,8 +61,8 @@ class SettingsService {
 
   /// Save settings to storage
   static Future<void> saveSettings(Map<String, dynamic> settings) async {
-    _cachedSettings = settings;
-    final settingsJson = jsonEncode(settings);
+    _cachedSettings = Map<String, dynamic>.from(settings);
+    final settingsJson = jsonEncode(_cachedSettings);
     await _secureStorage.write(key: _settingsKey, value: settingsJson);
   }
 
@@ -103,7 +103,14 @@ class SettingsService {
 
     for (int i = 0; i < pathParts.length - 1; i++) {
       if (!current.containsKey(pathParts[i])) {
-        current[pathParts[i]] = {};
+        current[pathParts[i]] = <String, dynamic>{};
+      } else if (current[pathParts[i]] is! Map) {
+        current[pathParts[i]] = <String, dynamic>{};
+      } else {
+        // Ensure we have a modifiable map
+        current[pathParts[i]] = Map<String, dynamic>.from(
+          current[pathParts[i]],
+        );
       }
       current = current[pathParts[i]];
     }

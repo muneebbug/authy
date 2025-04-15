@@ -289,36 +289,30 @@ class _AccountItemState extends ConsumerState<AccountItem> {
   /// Build the Nothing OS style TOTP code display with dot-matrix numbers
   Widget _buildNothingStyleCode() {
     if (_currentCode == null) {
-      return Text(
-        '------',
-        style: GoogleFonts.spaceMono(
-          fontSize: 24,
-          letterSpacing: 3,
-          textStyle: Theme.of(context).textTheme.titleLarge,
-        ),
+      return const Center(
+        child: Text('------', style: TextStyle(fontSize: 24, letterSpacing: 3)),
       );
     }
 
     final code = _currentCode!;
+    // Split the code in half for better readability
+    final firstHalf = code.substring(0, code.length ~/ 2);
+    final secondHalf = code.substring(code.length ~/ 2);
 
-    // Instead of using RichText, display each digit separately with spacing
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < code.length; i++) ...[
-          Text(
-            code[i],
-            style: GoogleFonts.spaceMono(
-              fontSize: 24,
-              fontWeight: FontWeight.normal,
-              letterSpacing: 3,
-              textStyle: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          // Add space between characters, but not after the last one
-          if (i < code.length - 1) const SizedBox(width: 12),
+    return RichText(
+      text: TextSpan(
+        style: GoogleFonts.spaceMono(
+          fontSize: 24,
+          fontWeight: FontWeight.normal,
+          letterSpacing: 3,
+          textStyle: Theme.of(context).textTheme.titleLarge,
+        ),
+        children: [
+          TextSpan(text: firstHalf),
+          const TextSpan(text: ' '), // Space between halves
+          TextSpan(text: secondHalf),
         ],
-      ],
+      ),
     );
   }
 }

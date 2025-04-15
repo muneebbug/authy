@@ -5,6 +5,8 @@ import 'package:sentinel/core/theme/app_theme.dart';
 import 'package:sentinel/core/utils/auth_service.dart';
 import 'package:sentinel/presentation/providers/auth_provider.dart';
 import 'package:sentinel/presentation/screens/pin_setup_screen.dart';
+import 'package:sentinel/presentation/screens/export_accounts_screen.dart';
+import 'package:sentinel/presentation/screens/import_accounts_screen.dart';
 import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
 import 'dart:convert';
@@ -364,7 +366,12 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Export as encrypted file',
                   trailing: const Icon(Icons.navigate_next),
                   onTap: () {
-                    // Placeholder
+                    // Navigate to the export accounts screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ExportAccountsScreen(),
+                      ),
+                    );
                   },
                 ),
 
@@ -375,7 +382,12 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Import from file',
                   trailing: const Icon(Icons.navigate_next),
                   onTap: () {
-                    // Placeholder
+                    // Navigate to the import accounts screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ImportAccountsScreen(),
+                      ),
+                    );
                   },
                 ),
 

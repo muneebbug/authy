@@ -29,35 +29,18 @@ void main() async {
     ),
   );
 
-  // Initialize Hive for local storage
+  // Essential initializations before showing UI
   await Hive.initFlutter();
-
-  // Initialize secure storage for encryption
   await SecureStorageService.init();
-
-  // Initialize settings service
   await SettingsService.init();
 
-  // Migrate any existing settings
-  await AuthService.initializeAndMigrate();
-
-  // Pre-check biometric availability to speed up UI
-  print('Checking biometric availability on startup...');
-  final biometricAvailable = await AuthService.isBiometricAvailable();
-  print('Biometric availability: $biometricAvailable');
-
-  // Initialize time synchronization
-  await TOTPService.initTimeSync();
-
-  // Initialize the account repository
+  // Create repositories
   final accountRepository = await AccountRepositoryImpl.create();
-
-  // Initialize Hive repository
   final hiveRepository = HiveRepository();
   await hiveRepository.init();
 
-  // Prevent screenshots in the app for security
-  await SystemChrome.setPreferredOrientations([
+  // Set portrait orientation
+  SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -65,14 +48,27 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        // Override the unimplemented repository with our implementation
         accountRepositoryProvider.overrideWithValue(accountRepository),
-        // Override the Hive repository with our initialized instance
         hiveRepositoryProvider.overrideWithValue(hiveRepository),
       ],
       child: const SentinelApp(),
     ),
   );
+
+  // Defer non-essential initialization for after UI is shown
+  _performBackgroundInitialization();
+}
+
+/// Perform non-essential initialization tasks in the background
+Future<void> _performBackgroundInitialization() async {
+  // Migrate any existing settings
+  await AuthService.initializeAndMigrate();
+
+  // Pre-check biometric availability to speed up UI
+  await AuthService.isBiometricAvailable();
+
+  // Initialize time synchronization in background
+  await TOTPService.initTimeSync();
 }
 
 /// Main application widget

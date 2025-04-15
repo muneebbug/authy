@@ -251,12 +251,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _copyTOTPCode(Account account) async {
     // Show loading indicator
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.showSnackBar(
-      const SnackBar(
-        content: Text('Copying code...'),
-        duration: Duration(milliseconds: 300),
-      ),
-    );
 
     try {
       // Generate code
