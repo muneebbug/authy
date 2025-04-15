@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sentinel/core/utils/secure_storage_service.dart';
-import 'package:sentinel/core/utils/totp_service.dart';
-import 'package:sentinel/core/utils/hive_repository.dart';
+import 'package:sentinel/core/theme/app_theme.dart';
+import 'package:sentinel/core/utils/app_lifecycle_observer.dart';
 import 'package:sentinel/core/utils/auth_service.dart';
+import 'package:sentinel/core/utils/hive_repository.dart';
+import 'package:sentinel/core/utils/secure_storage_service.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
+import 'package:sentinel/core/utils/totp_service.dart';
 import 'package:sentinel/data/repositories/account_repository_impl.dart';
-import 'package:sentinel/domain/repositories/account_repository.dart';
 import 'package:sentinel/presentation/providers/account_provider.dart';
 import 'package:sentinel/presentation/providers/auth_provider.dart';
 import 'package:sentinel/presentation/providers/timer_provider.dart';
 import 'package:sentinel/presentation/screens/auth_screen.dart';
 import 'package:sentinel/presentation/screens/home_screen.dart';
-import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
-import 'package:sentinel/core/theme/app_theme.dart';
-import 'package:sentinel/core/utils/app_lifecycle_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +24,7 @@ void main() async {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppTheme.background,
+      systemNavigationBarColor: Colors.black,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
@@ -223,16 +220,25 @@ class _SentinelAppState extends ConsumerState<SentinelApp>
     // Get the current accent color index
     final accentColorIndex = ref.watch(accentColorProvider);
 
+    // Get the current theme mode
+    final themeMode = ref.watch(themeModeProvider);
+
     // Don't show anything until initialization is complete to prevent flash
     if (!_isInitialized) {
+      // Determine the background color based on theme
+      final backgroundColor =
+          themeMode == ThemeMode.dark
+              ? AppTheme.darkBackground
+              : AppTheme.lightBackground;
+
       return MaterialApp(
         title: 'Sentinel',
-        theme: AppTheme.buildTheme(context, accentColorIndex),
-        darkTheme: AppTheme.buildTheme(context, accentColorIndex),
-        themeMode: ThemeMode.dark,
+        theme: AppTheme.buildLightTheme(context, accentColorIndex),
+        darkTheme: AppTheme.buildDarkTheme(context, accentColorIndex),
+        themeMode: themeMode,
         home: Scaffold(
-          backgroundColor: AppTheme.background,
-          body: const Center(child: CircularProgressIndicator()),
+          backgroundColor: backgroundColor,
+          body: Center(child: CircularProgressIndicator()),
         ),
         debugShowCheckedModeBanner: false,
       );
@@ -240,17 +246,13 @@ class _SentinelAppState extends ConsumerState<SentinelApp>
 
     return MaterialApp(
       title: 'Sentinel',
-      theme: AppTheme.buildTheme(context, accentColorIndex),
-      darkTheme: AppTheme.buildTheme(context, accentColorIndex),
-      themeMode: ThemeMode.dark, // Always use dark theme for NothingOS look
+      theme: AppTheme.buildLightTheme(context, accentColorIndex),
+      darkTheme: AppTheme.buildDarkTheme(context, accentColorIndex),
+      themeMode: themeMode,
       home:
           _isAppLocked
-              ? AuthScreen(child: HomeScreen(), checkAppLock: true)
-              : AuthScreen(
-                child: HomeScreen(),
-                checkAppLock:
-                    false, // On initial app launch, still check auth method
-              ),
+              ? AuthScreen(checkAppLock: true, child: HomeScreen())
+              : AuthScreen(checkAppLock: false, child: HomeScreen()),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -24,7 +24,13 @@ class AppDrawer extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade800, width: 0.5),
+                  bottom: BorderSide(
+                    color:
+                        theme.brightness == Brightness.dark
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade300,
+                    width: 0.5,
+                  ),
                 ),
               ),
               child: Center(
@@ -36,7 +42,10 @@ class AppDrawer extends ConsumerWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color:
+                            theme.brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(color: accentColor, width: 2.0),
                       ),
@@ -112,7 +121,10 @@ class AppDrawer extends ConsumerWidget {
               child: Text(
                 'Version 1.0.0',
                 style: GoogleFonts.spaceMono(
-                  color: Colors.grey.shade600,
+                  color:
+                      theme.brightness == Brightness.dark
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade700,
                   fontSize: 12,
                 ),
               ),
@@ -131,7 +143,13 @@ class AppDrawer extends ConsumerWidget {
     bool isSelected = false,
     required Color accentColor,
   }) {
-    final color = isSelected ? accentColor : Colors.white;
+    final theme = Theme.of(context);
+    final color =
+        isSelected
+            ? accentColor
+            : theme.brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black;
 
     return ListTile(
       leading: Icon(icon, color: color),
@@ -141,7 +159,10 @@ class AppDrawer extends ConsumerWidget {
       ),
       onTap: onTap,
       selected: isSelected,
-      selectedTileColor: Colors.grey.shade900,
+      selectedTileColor:
+          theme.brightness == Brightness.dark
+              ? Colors.grey.shade900
+              : Colors.grey.shade200,
     );
   }
 }

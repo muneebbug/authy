@@ -4,9 +4,12 @@ import 'package:sentinel/presentation/providers/account_provider.dart';
 
 /// A provider that updates the currentTimestampProvider every second
 final timerProvider = Provider<void>((ref) {
-  // Update the timestamp immediately
-  ref.read(currentTimestampProvider.notifier).state =
-      DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  // Don't update the timestamp immediately - this causes provider initialization errors
+  // Instead, schedule the first update to happen after initialization
+  Future.microtask(() {
+    ref.read(currentTimestampProvider.notifier).state =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  });
 
   // Set up a timer to update the timestamp every second
   final timer = Timer.periodic(const Duration(seconds: 1), (_) {

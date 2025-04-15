@@ -270,10 +270,34 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSettingsItem(
                   icon: Icons.brightness_6,
                   title: 'Theme',
-                  subtitle: 'Dark mode',
-                  trailing: Switch(
-                    value: true, // Always dark for now
-                    onChanged: null,
+                  subtitle: _getThemeModeSubtitle(ref),
+                  trailing: SizedBox(
+                    width: 180,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildThemeModeButton(
+                          context,
+                          ref,
+                          ThemeMode.light,
+                          Icons.light_mode,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildThemeModeButton(
+                          context,
+                          ref,
+                          ThemeMode.system,
+                          Icons.brightness_auto,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildThemeModeButton(
+                          context,
+                          ref,
+                          ThemeMode.dark,
+                          Icons.dark_mode,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -428,57 +452,71 @@ class SettingsScreen extends ConsumerWidget {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
-    return Container(
-      decoration: AppTheme.settingsItemDecoration(),
-      margin: const EdgeInsets.only(bottom: 1),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon),
-              ),
-              const SizedBox(width: 16),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final brightness = theme.brightness;
 
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.spaceMono(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+        return Container(
+          decoration: AppTheme.settingsItemDecoration(brightness),
+          margin: const EdgeInsets.only(bottom: 1),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color:
+                          brightness == Brightness.dark
+                              ? Colors.black26
+                              : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.spaceMono(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                    child: Icon(icon),
+                  ),
+                  const SizedBox(width: 16),
 
-              // Trailing widget (switch, button, etc)
-              if (trailing != null) trailing,
-            ],
+                  // Text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.spaceMono(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppTheme.getOnSurfaceColor(brightness),
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.spaceMono(
+                            color:
+                                brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Trailing widget (switch, button, etc)
+                  if (trailing != null) trailing,
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -830,6 +868,69 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
       );
+    }
+  }
+
+  // Build a theme mode button
+  Widget _buildThemeModeButton(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode mode,
+    IconData icon,
+  ) {
+    final theme = Theme.of(context);
+    final brightness = theme.brightness;
+    final isSelected = ref.watch(themeModeProvider) == mode;
+    final accentColorIndex = ref.watch(accentColorProvider);
+    final accentColor = AppTheme.getAccentColor(accentColorIndex);
+
+    return TextButton(
+      onPressed: () {
+        ref.read(themeModeProvider.notifier).setThemeMode(mode);
+      },
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(50, 30),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Container(
+        width: 50,
+        height: 30,
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? accentColor
+                  : brightness == Brightness.dark
+                  ? Colors.black26
+                  : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color:
+              isSelected
+                  ? AppTheme.getTextColor(accentColor)
+                  : brightness == Brightness.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[700],
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  // Get theme mode subtitle
+  String _getThemeModeSubtitle(WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    switch (themeMode) {
+      case ThemeMode.light:
+        return 'Light mode';
+      case ThemeMode.system:
+        return 'System default';
+      case ThemeMode.dark:
+        return 'Dark mode';
+      default:
+        throw Exception('Unknown theme mode');
     }
   }
 }
