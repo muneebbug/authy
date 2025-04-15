@@ -11,6 +11,7 @@ import 'package:sentinel/domain/entities/account.dart';
 import 'package:sentinel/presentation/providers/account_provider.dart';
 import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Screen for importing accounts
 class ImportAccountsScreen extends ConsumerStatefulWidget {
@@ -117,7 +118,7 @@ class _ImportAccountsScreenState extends ConsumerState<ImportAccountsScreen> {
           await accountProvider.addAccount(account);
           importCount++;
         } catch (e) {
-          print('Failed to import account: $e');
+          LoggerUtil.error('Failed to import account', e);
         }
       }
 

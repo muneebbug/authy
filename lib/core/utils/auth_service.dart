@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Authentication methods supported by the app
 enum AuthMethod { none, pin, biometric }
@@ -81,32 +82,34 @@ class AuthService {
   /// Check if biometric authentication is available
   static Future<bool> isBiometricAvailable() async {
     try {
-      print('============= BIOMETRIC AVAILABILITY CHECK =============');
+      LoggerUtil.section('BIOMETRIC AVAILABILITY CHECK');
 
       // First check if device supports biometrics
       final isDeviceSupported = await _localAuth.isDeviceSupported();
-      print('Device supports biometrics: $isDeviceSupported');
+      LoggerUtil.debug('Device supports biometrics: $isDeviceSupported');
 
       if (!isDeviceSupported) {
-        print('🛑 Device does not support biometric authentication');
+        LoggerUtil.warning('Device does not support biometric authentication');
         return false;
       }
 
       // Then check if biometrics are available on this device
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      print('Can check biometrics: $canCheckBiometrics');
+      LoggerUtil.debug('Can check biometrics: $canCheckBiometrics');
 
       if (!canCheckBiometrics) {
-        print('🛑 Biometric authentication not available on this device');
+        LoggerUtil.warning(
+          'Biometric authentication not available on this device',
+        );
         return false;
       }
 
       // Check which biometrics are available
       final availableBiometrics = await _localAuth.getAvailableBiometrics();
-      print('Available biometrics: $availableBiometrics');
+      LoggerUtil.debug('Available biometrics: $availableBiometrics');
 
       if (availableBiometrics.isEmpty) {
-        print('🛑 No biometrics have been enrolled on this device');
+        LoggerUtil.warning('No biometrics have been enrolled on this device');
         return false;
       }
 
@@ -123,30 +126,28 @@ class AuthService {
         BiometricType.strong,
       );
 
-      print('Has fingerprint: $hasFingerprint');
-      print('Has face ID: $hasFaceId');
-      print('Has iris scanning: $hasIris');
-      print('Has strong biometrics: $hasStrongBiometrics');
+      LoggerUtil.debug('Has fingerprint: $hasFingerprint');
+      LoggerUtil.debug('Has face ID: $hasFaceId');
+      LoggerUtil.debug('Has iris scanning: $hasIris');
+      LoggerUtil.debug('Has strong biometrics: $hasStrongBiometrics');
 
       // Try a test authentication to see if we have permission
       try {
         // This method doesn't exist, removing it
         // final bool canAuthenticate = await _localAuth.canCheck();
-        // print('Can authenticate: $canAuthenticate');
       } catch (e) {
-        print('Error checking if can authenticate: $e');
+        LoggerUtil.error('Error checking if can authenticate', e);
       }
 
-      print('✅ Biometric authentication is available');
-      print('=======================================================');
+      LoggerUtil.info('Biometric authentication is available');
       return true;
     } on PlatformException catch (e) {
-      print('🛑 Error checking biometric availability: ${e.message}');
-      print('Error details: ${e.details}');
-      print('Error code: ${e.code}');
+      LoggerUtil.error('Error checking biometric availability', e);
+      LoggerUtil.debug('Error details: ${e.details}');
+      LoggerUtil.debug('Error code: ${e.code}');
       return false;
     } catch (e) {
-      print('🛑 Unexpected error checking biometric availability: $e');
+      LoggerUtil.error('Unexpected error checking biometric availability', e);
       return false;
     }
   }
@@ -166,16 +167,16 @@ class AuthService {
   /// Authenticate with biometrics
   static Future<bool> authenticateWithBiometrics() async {
     try {
-      print('============= BIOMETRIC AUTHENTICATION =============');
+      LoggerUtil.section('BIOMETRIC AUTHENTICATION');
 
       // First check if biometrics are available
       final biometricsAvailable = await isBiometricAvailable();
       if (!biometricsAvailable) {
-        print('🛑 Biometrics not available, authentication failed');
+        LoggerUtil.warning('Biometrics not available, authentication failed');
         return false;
       }
 
-      print('Attempting biometric authentication...');
+      LoggerUtil.debug('Attempting biometric authentication...');
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: 'Authenticate to access your accounts',
         options: const AuthenticationOptions(
@@ -184,21 +185,20 @@ class AuthService {
         ),
       );
 
-      print(
-        didAuthenticate
-            ? '✅ Biometric authentication successful'
-            : '🛑 Biometric authentication failed',
-      );
-      print('===================================================');
+      if (didAuthenticate) {
+        LoggerUtil.info('Biometric authentication successful');
+      } else {
+        LoggerUtil.warning('Biometric authentication failed');
+      }
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      print('🛑 Biometric authentication error: ${e.message}');
-      print('Error details: ${e.details}');
-      print('Error code: ${e.code}');
+      LoggerUtil.error('Biometric authentication error', e);
+      LoggerUtil.debug('Error details: ${e.details}');
+      LoggerUtil.debug('Error code: ${e.code}');
       return false;
     } catch (e) {
-      print('🛑 Unexpected error during biometric authentication: $e');
+      LoggerUtil.error('Unexpected error during biometric authentication', e);
       return false;
     }
   }

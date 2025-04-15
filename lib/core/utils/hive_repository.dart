@@ -1,7 +1,8 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 import 'package:sentinel/domain/entities/account.dart';
 import 'package:sentinel/data/models/account_model.dart';
 import 'package:sentinel/core/utils/secure_storage_service.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Repository for interacting with Hive storage
 class HiveRepository {
@@ -11,26 +12,27 @@ class HiveRepository {
   /// Initialize the repository
   Future<void> init() async {
     try {
-      print("Initializing HiveRepository...");
+      LoggerUtil.info("Initializing HiveRepository...");
 
       // Register adapter for AccountModel if not already registered
       if (!Hive.isAdapterRegistered(0)) {
-        print("Registering AccountModelAdapter");
+        LoggerUtil.debug("Registering AccountModelAdapter");
         Hive.registerAdapter(AccountModelAdapter());
       }
 
       // Register adapter for Algorithm enum if not already registered
       if (!Hive.isAdapterRegistered(2)) {
-        print("Registering Algorithm enum adapter");
+        LoggerUtil.debug("Registering Algorithm enum adapter");
         Hive.registerAdapter(AlgorithmAdapter());
       }
 
-      print("Opening Hive box: $_boxName");
+      LoggerUtil.debug("Opening Hive box: $_boxName");
       _accountBox = await Hive.openBox<AccountModel>(_boxName);
-      print("Hive box opened successfully, count: ${_accountBox.length}");
+      LoggerUtil.debug(
+        "Hive box opened successfully, count: ${_accountBox.length}",
+      );
     } catch (e, stack) {
-      print("Error initializing HiveRepository: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error initializing HiveRepository", e, stack);
       rethrow;
     }
   }
@@ -38,7 +40,7 @@ class HiveRepository {
   /// Get all accounts from storage
   Future<List<Account>> getAccounts() async {
     try {
-      print("Getting all accounts, count: ${_accountBox.length}");
+      LoggerUtil.debug("Getting all accounts, count: ${_accountBox.length}");
       final accounts = _accountBox.values.toList();
       final List<Account> decryptedAccounts = [];
 
@@ -52,17 +54,18 @@ class HiveRepository {
           );
           decryptedAccounts.add(decryptedAccount);
         } catch (e) {
-          print("Error decrypting account: $e");
+          LoggerUtil.error("Error decrypting account", e);
           // Skip accounts with invalid encryption
           continue;
         }
       }
 
-      print("Returned ${decryptedAccounts.length} decrypted accounts");
+      LoggerUtil.debug(
+        "Returned ${decryptedAccounts.length} decrypted accounts",
+      );
       return decryptedAccounts;
     } catch (e, stack) {
-      print("Error getting all accounts: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error getting all accounts", e, stack);
       rethrow;
     }
   }
@@ -88,21 +91,20 @@ class HiveRepository {
   /// Save an account to storage
   Future<void> saveAccount(Account account) async {
     try {
-      print("Saving account: ${account.issuer}");
+      LoggerUtil.info("Saving account: ${account.issuer}");
       final encryptedSecretKey = SecureStorageService.encrypt(
         account.secretKey,
       );
-      print("Secret key encrypted");
+      LoggerUtil.debug("Secret key encrypted");
       final encryptedAccount = AccountModel.fromEntity(
         account.copyWith(secretKey: encryptedSecretKey),
       );
-      print("Account model created");
+      LoggerUtil.debug("Account model created");
 
       await _accountBox.put(account.id, encryptedAccount);
-      print("Account saved to box with ID: ${account.id}");
+      LoggerUtil.debug("Account saved to box with ID: ${account.id}");
     } catch (e, stack) {
-      print("Error saving account: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error saving account", e, stack);
       rethrow;
     }
   }

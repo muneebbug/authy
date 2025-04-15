@@ -1,27 +1,30 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:base32/base32.dart';
+import 'package:crypto/crypto.dart' hide Hmac;
 import 'package:cryptography/cryptography.dart';
 import 'package:sentinel/domain/entities/account.dart';
 import 'package:ntp/ntp.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Service for generating TOTP codes according to RFC 6238
 class TOTPService {
   /// Cache for the time offset with NTP servers
   static int? _timeOffset;
 
-  /// Initialize the time offset with NTP
-  static Future<void> initTimeSync() async {
+  /// Initialize time synchronization with NTP
+  static Future<void> initializeTimeSync() async {
     try {
-      print("Initializing time sync...");
+      LoggerUtil.debug("Initializing time sync...");
       final DateTime ntpTime = await NTP.now();
       final DateTime localTime = DateTime.now();
       _timeOffset =
           ntpTime.millisecondsSinceEpoch - localTime.millisecondsSinceEpoch;
-      print("Time offset: $_timeOffset ms");
+      LoggerUtil.debug("Time offset: $_timeOffset ms");
     } catch (e) {
-      print("Error syncing time: $e");
-      // If NTP fails, we'll use local time
+      LoggerUtil.error("Error syncing time", e);
+      // Use default offset (0) if time sync fails
       _timeOffset = 0;
     }
   }
@@ -33,17 +36,18 @@ class TOTPService {
     return adjustedTimeMs ~/ 1000;
   }
 
-  /// Generate TOTP code for an account
+  /// Generate a TOTP code for the specified account
   static Future<String> generateCode(Account account) async {
     try {
-      print("Generating code for ${account.issuer}");
-      // Decode the base32 secret key
-      final Uint8List secretBytes = base32.decode(account.secretKey);
-      print("Secret key decoded, length: ${secretBytes.length}");
+      LoggerUtil.debug("Generating code for ${account.issuer}");
+      // Decode the secret key (base32)
+      final secretBytes = base32.decode(account.secretKey);
+      LoggerUtil.debug("Secret key decoded, length: ${secretBytes.length}");
 
-      // Calculate the time counter value (T)
-      final int counter = _getCurrentTimestamp() ~/ account.period;
-      print("Counter value: $counter");
+      // Calculate the counter value from Unix time
+      final timeMs = DateTime.now().millisecondsSinceEpoch + (_timeOffset ?? 0);
+      final counter = (timeMs ~/ 1000) ~/ account.period;
+      LoggerUtil.debug("Counter value: $counter");
 
       // Convert counter to bytes
       final Uint8List counterBytes = _int64ToBytes(counter);
@@ -62,35 +66,24 @@ class TOTPService {
           break;
       }
 
-      // Compute the HMAC
-      final SecretKey secretKey = SecretKey(secretBytes);
-      final List<int> rawHmac = await algorithm
-          .calculateMac(counterBytes, secretKey: secretKey)
-          .then((macValue) => macValue.bytes);
+      // Calculate HMAC
+      final hmac = await _calculateHmac(
+        secretBytes,
+        counterBytes,
+        account.algorithm,
+      );
+      LoggerUtil.debug("HMAC calculated, length: ${hmac.length}");
 
-      print("HMAC calculated, length: ${rawHmac.length}");
+      // Convert to integer code base on RFC 6238
+      final code = _generateCodeFromHmac(hmac, account.digits);
+      LoggerUtil.debug("Generated code: $code");
 
-      // Generate the TOTP code using proper truncation algorithm
-      final int offset = rawHmac.last & 0xf;
-      final int binary =
-          ((rawHmac[offset] & 0x7f) << 24) |
-          ((rawHmac[offset + 1] & 0xff) << 16) |
-          ((rawHmac[offset + 2] & 0xff) << 8) |
-          (rawHmac[offset + 3] & 0xff);
-
-      // Create the TOTP code with proper modulo (10^digits)
-      final int digitsPower = 10.toInt() * 10.toInt().pow(account.digits - 1);
-      final int code = binary % digitsPower;
-
-      print("Generated code: $code");
-
-      // Format the code to have the correct number of digits
-      final String result = code.toString().padLeft(account.digits, '0');
-      print("Formatted code: $result");
+      // Format the code with proper padding
+      String result = code.toString().padLeft(account.digits, '0');
+      LoggerUtil.debug("Formatted code: $result");
       return result;
     } catch (e, stack) {
-      print("Error generating TOTP code: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error generating TOTP code", e, stack);
       rethrow;
     }
   }
@@ -108,6 +101,50 @@ class TOTPService {
     final ByteData data = ByteData(8);
     data.setInt64(0, value, Endian.big);
     return data.buffer.asUint8List();
+  }
+
+  /// Calculate HMAC
+  static Future<List<int>> _calculateHmac(
+    Uint8List secretBytes,
+    Uint8List counterBytes,
+    Algorithm algorithm,
+  ) async {
+    // Choose the appropriate algorithm
+    MacAlgorithm macAlgorithm;
+    switch (algorithm) {
+      case Algorithm.sha1:
+        macAlgorithm = Hmac.sha1();
+        break;
+      case Algorithm.sha256:
+        macAlgorithm = Hmac.sha256();
+        break;
+      case Algorithm.sha512:
+        macAlgorithm = Hmac.sha512();
+        break;
+    }
+
+    // Compute the HMAC
+    final SecretKey secretKey = SecretKey(secretBytes);
+    final macValue = await macAlgorithm.calculateMac(
+      counterBytes,
+      secretKey: secretKey,
+    );
+    return macValue.bytes;
+  }
+
+  /// Generate the TOTP code from the HMAC
+  static int _generateCodeFromHmac(List<int> hmac, int digits) {
+    // Generate the TOTP code using proper truncation algorithm
+    final int offset = hmac.last & 0xf;
+    final int binary =
+        ((hmac[offset] & 0x7f) << 24) |
+        ((hmac[offset + 1] & 0xff) << 16) |
+        ((hmac[offset + 2] & 0xff) << 8) |
+        (hmac[offset + 3] & 0xff);
+
+    // Create the TOTP code with proper modulo (10^digits)
+    final int digitsPower = 10.toInt() * 10.toInt().pow(digits - 1);
+    return binary % digitsPower;
   }
 }
 

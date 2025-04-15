@@ -6,6 +6,7 @@ import 'package:sentinel/domain/repositories/account_repository.dart';
 import 'package:sentinel/core/utils/hive_repository.dart';
 import 'package:sentinel/core/utils/totp_service.dart';
 import 'package:sentinel/core/providers/totp_service_provider.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Provider for account repository
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
@@ -57,7 +58,7 @@ final totpCodeProvider = FutureProvider.family<String, Account>((
     // Generate the TOTP code
     return TOTPService.generateCode(account);
   } catch (e) {
-    print("Error generating TOTP code: $e");
+    LoggerUtil.error("Error generating TOTP code", e);
     rethrow;
   }
 });
@@ -112,7 +113,7 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
         state = accounts;
       }
     } catch (e) {
-      print("Error loading accounts: $e");
+      LoggerUtil.error("Error loading accounts", e);
       // Only set empty state if we don't already have accounts
       if (state.isEmpty) {
         state = [];

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:encrypt/encrypt.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Service for securely storing and retrieving sensitive data
 class SecureStorageService {
@@ -13,13 +14,13 @@ class SecureStorageService {
   /// Initialize the encryption service
   static Future<void> init() async {
     try {
-      print("Initializing SecureStorageService...");
+      LoggerUtil.info("Initializing SecureStorageService...");
       final String? storedKey = await _secureStorage.read(
         key: _encryptionKeyName,
       );
 
       if (storedKey == null) {
-        print("No encryption key found, generating new key");
+        LoggerUtil.debug("No encryption key found, generating new key");
         // Generate a new encryption key if none exists
         final key = Key.fromSecureRandom(32); // AES-256 requires 32 bytes
         await _secureStorage.write(
@@ -27,19 +28,18 @@ class SecureStorageService {
           value: base64Encode(key.bytes),
         );
         _encryptionKey = key;
-        print("New encryption key generated and stored");
+        LoggerUtil.debug("New encryption key generated and stored");
       } else {
-        print("Using existing encryption key");
+        LoggerUtil.debug("Using existing encryption key");
         // Use the existing key
         _encryptionKey = Key(base64Decode(storedKey));
       }
 
       // Initialize the encrypter with the key
       _encrypter = Encrypter(AES(_encryptionKey!, mode: AESMode.cbc));
-      print("Encrypter initialized successfully");
+      LoggerUtil.debug("Encrypter initialized successfully");
     } catch (e, stack) {
-      print("Error initializing SecureStorageService: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error initializing SecureStorageService", e, stack);
       rethrow;
     }
   }
@@ -48,7 +48,7 @@ class SecureStorageService {
   static String encrypt(String value) {
     try {
       if (_encrypter == null) {
-        print("Encrypter is null, service not initialized");
+        LoggerUtil.error("Encrypter is null, service not initialized");
         throw Exception('SecureStorageService not initialized');
       }
 
@@ -62,11 +62,10 @@ class SecureStorageService {
       };
 
       final result = jsonEncode(encryptedData);
-      print("Value encrypted successfully");
+      LoggerUtil.debug("Value encrypted successfully");
       return result;
     } catch (e, stack) {
-      print("Error encrypting value: $e");
-      print("Stack trace: $stack");
+      LoggerUtil.error("Error encrypting value", e, stack);
       rethrow;
     }
   }

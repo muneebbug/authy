@@ -10,6 +10,7 @@ import 'package:sentinel/presentation/screens/import_accounts_screen.dart';
 import 'package:sentinel/presentation/widgets/dot_pattern_background.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
 import 'dart:convert';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Settings screen with NothingOS design
 class SettingsScreen extends ConsumerWidget {
@@ -153,7 +154,10 @@ class SettingsScreen extends ConsumerWidget {
                                   }
                                 }
                               } catch (e) {
-                                print('Error toggling biometric auth: $e');
+                                LoggerUtil.error(
+                                  'Error toggling biometric auth',
+                                  e,
+                                );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(

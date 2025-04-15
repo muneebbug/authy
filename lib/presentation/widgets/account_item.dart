@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sentinel/domain/entities/account.dart';
 import 'package:sentinel/presentation/providers/account_provider.dart';
 import 'package:sentinel/core/utils/totp_service.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Widget to display a 2FA account in the list with Nothing OS style
 class AccountItem extends ConsumerStatefulWidget {
@@ -98,34 +99,26 @@ class _AccountItemState extends ConsumerState<AccountItem> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      // Generate the code directly
+      setState(() {
+        _isLoading = true;
+      });
       final code = await TOTPService.generateCode(widget.account);
+      setState(() {
+        _currentCode = code;
+        _isLoading = false;
+      });
 
-      if (mounted) {
-        setState(() {
-          _currentCode = code;
-          _isLoading = false;
-        });
-
-        // Update the last used timestamp
-        final updatedAccount = widget.account.copyWith(
-          lastUsedAt: DateTime.now(),
-        );
-        ref.read(accountsProvider.notifier).updateAccount(updatedAccount);
-      }
+      // Update the last used timestamp
+      final updatedAccount = widget.account.copyWith(
+        lastUsedAt: DateTime.now(),
+      );
+      ref.read(accountsProvider.notifier).updateAccount(updatedAccount);
     } catch (e) {
-      print("Error loading code: $e");
-      if (mounted) {
-        setState(() {
-          _currentCode = null;
-          _isLoading = false;
-        });
-      }
+      LoggerUtil.error("Error loading code", e);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

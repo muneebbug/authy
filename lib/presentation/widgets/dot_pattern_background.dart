@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// A reusable widget that draws a Nothing OS-style dot pattern background
 class DotPatternBackground extends StatelessWidget {
-  /// The opacity of the dots, defaults to 0.05
+  /// The opacity of the dots, defaults to 0.15
   final double opacity;
 
   /// The spacing between dots, defaults to 16
@@ -21,12 +21,17 @@ class DotPatternBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    // Use MediaQuery to get the screen size
+    final size = MediaQuery.of(context).size;
+
+    return SizedBox.fromSize(
+      size: size,
       child: CustomPaint(
         painter: DotPatternPainter(
           dotColor: color.withOpacity(opacity),
           spacing: spacing,
         ),
+        size: size,
       ),
     );
   }
@@ -36,7 +41,7 @@ class DotPatternBackground extends StatelessWidget {
 class DotPatternPainter extends CustomPainter {
   final Color dotColor;
   final double spacing;
-  final double dotRadius = 0.5; // 1px diameter as in CSS
+  final double dotRadius = 1.0; // Increased dot size to 2px diameter
 
   DotPatternPainter({required this.dotColor, required this.spacing});
 
@@ -45,7 +50,8 @@ class DotPatternPainter extends CustomPainter {
     final paint =
         Paint()
           ..color = dotColor
-          ..style = PaintingStyle.fill;
+          ..style = PaintingStyle.fill
+          ..isAntiAlias = true; // Enable anti-aliasing for smoother dots
 
     // Calculate the number of dots needed
     final numDotsX = (size.width / spacing).ceil() + 1;

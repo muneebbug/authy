@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentinel/core/utils/auth_service.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 
 /// Provider for the current authentication method
 final authMethodProvider =
@@ -16,12 +17,12 @@ final appLockProvider = StateNotifierProvider<AppLockNotifier, bool>(
 /// Provider for biometric authentication availability
 final biometricAvailableProvider = FutureProvider<bool>((ref) async {
   try {
-    print('Checking biometric availability in provider...');
+    LoggerUtil.debug('Checking biometric availability in provider...');
     final isAvailable = await AuthService.isBiometricAvailable();
-    print('Biometric availability result: $isAvailable');
+    LoggerUtil.debug('Biometric availability result: $isAvailable');
     return isAvailable;
   } catch (e) {
-    print('Error checking biometric availability: $e');
+    LoggerUtil.error('Error checking biometric availability', e);
     return false;
   }
 });
@@ -97,14 +98,14 @@ class AuthMethodNotifier extends StateNotifier<AuthMethod> {
         await AuthService.setAuthMethod(AuthMethod.biometric);
         await _updateSettingsServiceAuthMethod(AuthMethod.biometric);
         state = AuthMethod.biometric;
-        print('Biometric authentication enabled successfully');
+        LoggerUtil.info('Biometric authentication enabled successfully');
         return true;
       } catch (e) {
-        print('Error enabling biometric authentication: $e');
+        LoggerUtil.error('Error enabling biometric authentication', e);
         return false;
       }
     } else {
-      print('Biometrics not available, cannot enable');
+      LoggerUtil.warning('Biometrics not available, cannot enable');
       return false;
     }
   }

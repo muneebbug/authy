@@ -203,13 +203,16 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
       // If path has the format "Issuer:accountName"
       if (path.contains(':')) {
         final parts = path.split(':');
-        issuer = parts[0];
-        accountName = parts.length > 1 ? parts[1] : '';
+        issuer = Uri.decodeComponent(parts[0]);
+        accountName = parts.length > 1 ? Uri.decodeComponent(parts[1]) : '';
+      } else {
+        // If no colon, decode the entire path as the account name
+        accountName = Uri.decodeComponent(path);
       }
 
       // Get issuer from query param if available (takes precedence)
       if (uri.queryParameters.containsKey('issuer')) {
-        issuer = uri.queryParameters['issuer']!;
+        issuer = Uri.decodeComponent(uri.queryParameters['issuer']!);
       }
 
       // Get the secret

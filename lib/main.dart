@@ -6,6 +6,7 @@ import 'package:sentinel/core/theme/app_theme.dart';
 import 'package:sentinel/core/utils/app_lifecycle_observer.dart';
 import 'package:sentinel/core/utils/auth_service.dart';
 import 'package:sentinel/core/utils/hive_repository.dart';
+import 'package:sentinel/core/utils/logger_util.dart';
 import 'package:sentinel/core/utils/secure_storage_service.dart';
 import 'package:sentinel/core/utils/settings_service.dart';
 import 'package:sentinel/core/utils/totp_service.dart';
@@ -18,6 +19,11 @@ import 'package:sentinel/presentation/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize logger and enable debug logs in development
+  // Comment this line out for production
+  LoggerUtil.enableDebugLogs();
+  LoggerUtil.info('Application starting...');
 
   // Set system UI overlay style to match NothingOS dark theme
   SystemChrome.setSystemUIOverlayStyle(
@@ -68,7 +74,7 @@ Future<void> _performBackgroundInitialization() async {
   await AuthService.isBiometricAvailable();
 
   // Initialize time synchronization in background
-  await TOTPService.initTimeSync();
+  await TOTPService.initializeTimeSync();
 }
 
 /// Main application widget

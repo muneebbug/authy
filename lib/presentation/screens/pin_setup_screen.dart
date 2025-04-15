@@ -84,18 +84,36 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'SET PIN',
+          _isConfirming ? 'CONFIRM PIN' : 'CREATE PIN',
           style: GoogleFonts.spaceMono(
             letterSpacing: 1.0,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Stack(
         children: [
-          // Dot pattern background
+          // Background
           const DotPatternBackground(),
+
+          // Gradient overlay for better contrast
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0.2),
+                  Theme.of(context).primaryColor.withOpacity(0.1),
+                ],
+              ),
+            ),
+          ),
 
           // Main content
           SingleChildScrollView(

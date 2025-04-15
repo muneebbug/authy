@@ -59,7 +59,7 @@ dependencies:
   uuid: ^4.3.3
   
   # Additional utilities
-  logger: ^2.0.2+1
+  logger: ^2.5.0
   path_provider: ^2.1.1
   share_plus: ^10.1.4
   file_picker: ^10.1.2
