@@ -15,6 +15,24 @@ final appLockProvider = StateNotifierProvider<AppLockNotifier, bool>(
 
 /// Provider for biometric authentication availability
 final biometricAvailableProvider = FutureProvider<bool>((ref) async {
+  try {
+    print('Checking biometric availability in provider...');
+    final isAvailable = await AuthService.isBiometricAvailable();
+    print('Biometric availability result: $isAvailable');
+    return isAvailable;
+  } catch (e) {
+    print('Error checking biometric availability: $e');
+    return false;
+  }
+});
+
+/// Provider to force refresh biometric status
+final biometricRefreshProvider = StateProvider<int>((ref) => 0);
+
+/// Provider for biometric authentication availability with refresh capability
+final refreshableBiometricProvider = FutureProvider<bool>((ref) async {
+  // Watch the refresh counter to rebuild when needed
+  ref.watch(biometricRefreshProvider);
   return await AuthService.isBiometricAvailable();
 });
 
@@ -72,12 +90,22 @@ class AuthMethodNotifier extends StateNotifier<AuthMethod> {
     state = AuthMethod.pin;
   }
 
-  Future<void> setBiometric() async {
+  Future<bool> setBiometric() async {
     final biometricAvailable = await AuthService.isBiometricAvailable();
     if (biometricAvailable) {
-      await AuthService.setAuthMethod(AuthMethod.biometric);
-      await _updateSettingsServiceAuthMethod(AuthMethod.biometric);
-      state = AuthMethod.biometric;
+      try {
+        await AuthService.setAuthMethod(AuthMethod.biometric);
+        await _updateSettingsServiceAuthMethod(AuthMethod.biometric);
+        state = AuthMethod.biometric;
+        print('Biometric authentication enabled successfully');
+        return true;
+      } catch (e) {
+        print('Error enabling biometric authentication: $e');
+        return false;
+      }
+    } else {
+      print('Biometrics not available, cannot enable');
+      return false;
     }
   }
 

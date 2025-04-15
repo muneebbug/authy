@@ -81,17 +81,72 @@ class AuthService {
   /// Check if biometric authentication is available
   static Future<bool> isBiometricAvailable() async {
     try {
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      print('============= BIOMETRIC AVAILABILITY CHECK =============');
 
-      if (!canCheckBiometrics || !isDeviceSupported) {
+      // First check if device supports biometrics
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      print('Device supports biometrics: $isDeviceSupported');
+
+      if (!isDeviceSupported) {
+        print('🛑 Device does not support biometric authentication');
         return false;
       }
 
-      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      // Then check if biometrics are available on this device
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      print('Can check biometrics: $canCheckBiometrics');
 
-      return availableBiometrics.isNotEmpty;
-    } on PlatformException catch (_) {
+      if (!canCheckBiometrics) {
+        print('🛑 Biometric authentication not available on this device');
+        return false;
+      }
+
+      // Check which biometrics are available
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      print('Available biometrics: $availableBiometrics');
+
+      if (availableBiometrics.isEmpty) {
+        print('🛑 No biometrics have been enrolled on this device');
+        return false;
+      }
+
+      // Check if device has fingerprint
+      final hasFingerprint = availableBiometrics.contains(
+        BiometricType.fingerprint,
+      );
+      // Check if device has face ID
+      final hasFaceId = availableBiometrics.contains(BiometricType.face);
+      // Check if device has iris scanning
+      final hasIris = availableBiometrics.contains(BiometricType.iris);
+      // Check if device has strong biometrics
+      final hasStrongBiometrics = availableBiometrics.contains(
+        BiometricType.strong,
+      );
+
+      print('Has fingerprint: $hasFingerprint');
+      print('Has face ID: $hasFaceId');
+      print('Has iris scanning: $hasIris');
+      print('Has strong biometrics: $hasStrongBiometrics');
+
+      // Try a test authentication to see if we have permission
+      try {
+        // This method doesn't exist, removing it
+        // final bool canAuthenticate = await _localAuth.canCheck();
+        // print('Can authenticate: $canAuthenticate');
+      } catch (e) {
+        print('Error checking if can authenticate: $e');
+      }
+
+      print('✅ Biometric authentication is available');
+      print('=======================================================');
+      return true;
+    } on PlatformException catch (e) {
+      print('🛑 Error checking biometric availability: ${e.message}');
+      print('Error details: ${e.details}');
+      print('Error code: ${e.code}');
+      return false;
+    } catch (e) {
+      print('🛑 Unexpected error checking biometric availability: $e');
       return false;
     }
   }
@@ -111,6 +166,16 @@ class AuthService {
   /// Authenticate with biometrics
   static Future<bool> authenticateWithBiometrics() async {
     try {
+      print('============= BIOMETRIC AUTHENTICATION =============');
+
+      // First check if biometrics are available
+      final biometricsAvailable = await isBiometricAvailable();
+      if (!biometricsAvailable) {
+        print('🛑 Biometrics not available, authentication failed');
+        return false;
+      }
+
+      print('Attempting biometric authentication...');
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: 'Authenticate to access your accounts',
         options: const AuthenticationOptions(
@@ -119,8 +184,21 @@ class AuthService {
         ),
       );
 
+      print(
+        didAuthenticate
+            ? '✅ Biometric authentication successful'
+            : '🛑 Biometric authentication failed',
+      );
+      print('===================================================');
+
       return didAuthenticate;
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e) {
+      print('🛑 Biometric authentication error: ${e.message}');
+      print('Error details: ${e.details}');
+      print('Error code: ${e.code}');
+      return false;
+    } catch (e) {
+      print('🛑 Unexpected error during biometric authentication: $e');
       return false;
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:authy/core/utils/auth_service.dart';
 import 'package:authy/presentation/providers/auth_provider.dart';
+import 'package:authy/presentation/providers/account_provider.dart';
 import 'package:authy/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for authenticating the user with PIN or biometric
@@ -26,6 +27,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Preload accounts in the background before authentication completes
+    // This avoids showing an empty list briefly when auth is successful
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(accountsProvider.notifier).loadAccounts();
+    });
+
     _initAuth();
   }
 
@@ -153,11 +161,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       setState(() {
         _authMethod = authMethod;
         _isBiometricAvailable = biometricAvailable;
+
+        // If auth method is none, automatically authenticate
+        if (_authMethod == AuthMethod.none) {
+          _isAuthenticated = true;
+        }
       });
+    }
+
+    // Skip authentication if auth is disabled or app lock is disabled when in check mode
+    if (authMethod == AuthMethod.none ||
+        (!appLockEnabled && widget.checkAppLock)) {
+      return widget.child;
     }
 
     // If already authenticated, show the child
     if (_isAuthenticated) {
+      // Show the child screen
       return widget.child;
     }
 

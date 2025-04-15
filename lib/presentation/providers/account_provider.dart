@@ -25,6 +25,9 @@ final accountsProvider = StateNotifierProvider<AccountsNotifier, List<Account>>(
   },
 );
 
+/// Provider to track account loading state
+final accountsLoadingProvider = StateProvider<bool>((ref) => true);
+
 /// Provider for the selected account
 final selectedAccountIdProvider = StateProvider<String?>((ref) => null);
 
@@ -74,26 +77,46 @@ final remainingSecondsProvider = Provider.family<int, Account>((ref, account) {
 /// Notifier for managing accounts
 class AccountsNotifier extends StateNotifier<List<Account>> {
   final HiveRepository _repository;
+  bool _isInitialized = false;
 
   /// Constructor
   AccountsNotifier(this._repository) : super([]) {
     _initializeRepository();
   }
 
+  bool get isInitialized => _isInitialized;
+
   /// Initialize the repository and load accounts
   Future<void> _initializeRepository() async {
     await _repository.init();
-    await loadAccounts();
+
+    // Only perform initial load if not already initialized
+    if (!_isInitialized) {
+      await loadAccounts();
+      _isInitialized = true;
+    }
   }
 
   /// Load accounts from storage
   Future<void> loadAccounts() async {
+    // Skip if already have accounts
+    if (state.isNotEmpty) {
+      return;
+    }
+
     try {
       final accounts = await _repository.getAccounts();
-      state = accounts;
+
+      // Only update state if we actually have new accounts or no accounts at all yet
+      if (accounts.isNotEmpty || state.isEmpty) {
+        state = accounts;
+      }
     } catch (e) {
       print("Error loading accounts: $e");
-      state = [];
+      // Only set empty state if we don't already have accounts
+      if (state.isEmpty) {
+        state = [];
+      }
     }
   }
 

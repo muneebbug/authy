@@ -44,6 +44,11 @@ void main() async {
   // Migrate any existing settings
   await AuthService.initializeAndMigrate();
 
+  // Pre-check biometric availability to speed up UI
+  print('Checking biometric availability on startup...');
+  final biometricAvailable = await AuthService.isBiometricAvailable();
+  print('Biometric availability: $biometricAvailable');
+
   // Initialize time synchronization
   await TOTPService.initTimeSync();
 
@@ -113,6 +118,9 @@ class _AuthyAppState extends ConsumerState<AuthyApp>
     try {
       // First make sure SettingsService is initialized
       await SettingsService.init();
+
+      // Preload accounts in background to avoid flash of empty content
+      ref.read(accountsProvider.notifier).loadAccounts();
 
       // Wait for auth method provider to initialize
       while (!ref.read(authMethodProvider.notifier).isInitialized) {

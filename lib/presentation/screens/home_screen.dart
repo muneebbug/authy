@@ -21,6 +21,32 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Load accounts once the widget is initialized
+    _loadAccounts();
+  }
+
+  // Load accounts and update loading state
+  Future<void> _loadAccounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await ref.read(accountsProvider.notifier).loadAccounts();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +79,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Dot pattern background
           const DotPatternBackground(),
           // Main content
-          _buildBody(accounts),
+          _isLoading ? _buildLoadingState() : _buildBody(accounts),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddAccount,
         child: const Icon(Icons.add, color: Colors.black),
         backgroundColor: accentColor,
+      ),
+    );
+  }
+
+  /// Build loading state
+  Widget _buildLoadingState() {
+    final accentColor = AppTheme.getAccentColor(ref.watch(accentColorProvider));
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              color: accentColor,
+              strokeWidth: 2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Loading accounts...',
+            style: GoogleFonts.spaceMono(fontSize: 14, color: Colors.grey[400]),
+          ),
+        ],
       ),
     );
   }
@@ -461,9 +513,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
     ).push(MaterialPageRoute(builder: (context) => const AddAccountScreen()));
 
-    // Refresh the accounts list when returning
+    // Show loading state and refresh the accounts list when returning
     if (mounted) {
-      ref.read(accountsProvider.notifier).loadAccounts();
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Use a small delay to ensure loading state is shown
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Reload accounts
+      await ref.read(accountsProvider.notifier).loadAccounts();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

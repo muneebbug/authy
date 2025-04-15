@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerWidget {
     final authMethod = ref.watch(authMethodProvider);
     final appLockEnabled = ref.watch(appLockProvider);
     final biometricAvailable =
-        ref.watch(biometricAvailableProvider).valueOrNull ?? false;
+        ref.watch(refreshableBiometricProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,35 +71,115 @@ class SettingsScreen extends ConsumerWidget {
                       biometricAvailable
                           ? 'Use fingerprint to unlock the app'
                           : 'Not available on this device',
-                  trailing: Switch(
-                    value: authMethod == AuthMethod.biometric,
-                    onChanged:
-                        biometricAvailable
-                            ? (value) async {
-                              if (value) {
-                                // Try authenticating before enabling
-                                final authenticated =
-                                    await AuthService.authenticateWithBiometrics();
-                                if (authenticated) {
-                                  ref
-                                      .read(authMethodProvider.notifier)
-                                      .setBiometric();
-                                }
-                              } else if (authMethod == AuthMethod.biometric) {
-                                // If turning off biometric, fallback to PIN if set, otherwise no auth
-                                final hasPin = await AuthService.hasPin();
-                                if (hasPin) {
-                                  ref
-                                      .read(authMethodProvider.notifier)
-                                      .setAuthMethod(AuthMethod.pin);
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      biometricAvailable
+                          ? TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor:
+                                  authMethod == AuthMethod.biometric
+                                      ? Colors.green.withOpacity(0.2)
+                                      : Colors.grey.withOpacity(0.2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () async {
+                              try {
+                                if (authMethod != AuthMethod.biometric) {
+                                  // Try to enable biometric
+                                  final authenticated =
+                                      await AuthService.authenticateWithBiometrics();
+                                  if (authenticated) {
+                                    await ref
+                                        .read(authMethodProvider.notifier)
+                                        .setBiometric();
+
+                                    // Show success message
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Biometric authentication enabled',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    // Show error message
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Biometric authentication failed',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
                                 } else {
-                                  ref
-                                      .read(authMethodProvider.notifier)
-                                      .removeAuthentication();
+                                  // Disable biometric
+                                  final hasPin = await AuthService.hasPin();
+                                  if (hasPin) {
+                                    await ref
+                                        .read(authMethodProvider.notifier)
+                                        .setAuthMethod(AuthMethod.pin);
+                                  } else {
+                                    await ref
+                                        .read(authMethodProvider.notifier)
+                                        .removeAuthentication();
+                                  }
+
+                                  // Show confirmation
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Biometric authentication disabled',
+                                        ),
+                                        backgroundColor: Colors.blue,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                print('Error toggling biometric auth: $e');
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
                                 }
                               }
-                            }
-                            : null,
+                            },
+                            child: Text(
+                              authMethod == AuthMethod.biometric
+                                  ? 'ENABLED'
+                                  : 'ENABLE',
+                              style: TextStyle(
+                                color:
+                                    authMethod == AuthMethod.biometric
+                                        ? Colors.green
+                                        : Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                          : const Text(
+                            'Not Available',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                    ],
                   ),
                 ),
 
