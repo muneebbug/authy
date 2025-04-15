@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:base32/base32.dart';
+import 'package:authy/core/utils/totp_service.dart';
 import 'package:authy/domain/entities/account.dart';
 import 'package:authy/presentation/providers/account_provider.dart';
+import 'package:authy/presentation/widgets/dot_pattern_background.dart';
 
-/// Screen for adding a new 2FA account
+/// Screen for adding a new TOTP account with Nothing OS-inspired design
 class AddAccountScreen extends ConsumerStatefulWidget {
   const AddAccountScreen({Key? key}) : super(key: key);
 
@@ -13,308 +16,298 @@ class AddAccountScreen extends ConsumerStatefulWidget {
   ConsumerState<AddAccountScreen> createState() => _AddAccountScreenState();
 }
 
-class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
-    with SingleTickerProviderStateMixin {
+class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TabController _tabController;
-
-  // Form fields
   final _issuerController = TextEditingController();
   final _accountNameController = TextEditingController();
-  final _secretKeyController = TextEditingController();
-
-  // Fixed defaults (Google Authenticator standard)
-  final Algorithm _algorithm = Algorithm.sha1;
-  final int _digits = 6;
-  final int _period = 30;
-
-  // Random color selection
-  final List<int> _colorOptions = [
-    0xFF2196F3, // Blue
-    0xFFF44336, // Red
-    0xFF4CAF50, // Green
-    0xFFFF9800, // Orange
-    0xFF9C27B0, // Purple
-    0xFF795548, // Brown
-  ];
-  late int _colorCode;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-
-    // Select a random color
-    _colorCode =
-        _colorOptions[DateTime.now().microsecond % _colorOptions.length];
-  }
+  final _secretController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _tabController.dispose();
     _issuerController.dispose();
     _accountNameController.dispose();
-    _secretKeyController.dispose();
+    _secretController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Add Account'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.qr_code), text: 'Scan QR'),
-            Tab(icon: Icon(Icons.edit), text: 'Manual Entry'),
-          ],
+        title: const Text(
+          'Add Account',
+          style: TextStyle(fontFamily: 'SpaceMono', letterSpacing: 1.0),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildQRScanner(), _buildManualEntryForm()],
+      body: Stack(
+        children: [
+          // Dot pattern background
+          const DotPatternBackground(),
+          // Main content
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeaderText(),
+                  const SizedBox(height: 40),
+                  _buildTextField(
+                    controller: _issuerController,
+                    label: 'SERVICE NAME',
+                    hint: 'Google, Twitter, GitHub...',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a service name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    controller: _accountNameController,
+                    label: 'ACCOUNT',
+                    hint: 'username or email@example.com',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an account name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    controller: _secretController,
+                    label: 'SECRET KEY',
+                    hint: 'JBSWY3DPEHPK3PXP',
+                    isSecret: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a secret key';
+                      }
+                      try {
+                        // Validate by attempting to decode it
+                        base32.decode(
+                          value.replaceAll(RegExp(r'[^A-Za-z0-9]'), ''),
+                        );
+                        return null;
+                      } catch (e) {
+                        return 'Invalid secret key format';
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 40),
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade900.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade900),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red.shade400),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: Colors.red.shade400,
+                                fontFamily: 'SpaceMono',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _saveAccount,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child:
+                          _isLoading
+                              ? SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.black,
+                                ),
+                              )
+                              : const Text(
+                                'SAVE ACCOUNT',
+                                style: TextStyle(
+                                  fontFamily: 'SpaceMono',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// QR Scanner view
-  Widget _buildQRScanner() {
+  Widget _buildHeaderText() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: MobileScanner(
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
-                _processQRCode(barcodes.first.rawValue ?? '');
-              }
-            },
+        Text(
+          'Add new authenticator',
+          style: TextStyle(
+            fontFamily: 'SpaceMono',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[300],
+            letterSpacing: 0.5,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            'Scan a QR code to add a new account',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        const SizedBox(height: 8),
+        Text(
+          'Enter the details of your 2FA account',
+          style: TextStyle(
+            fontFamily: 'SpaceMono',
+            fontSize: 14,
+            color: Colors.grey[500],
+            letterSpacing: 0.3,
           ),
         ),
       ],
     );
   }
 
-  /// Manual entry form
-  Widget _buildManualEntryForm() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextFormField(
-              controller: _issuerController,
-              decoration: const InputDecoration(
-                labelText: 'Service Name',
-                hintText: 'Google, Twitter, etc.',
-                prefixIcon: Icon(Icons.business),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a service name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    bool isSecret = false,
+    String? Function(String?)? validator,
+  }) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
 
-            TextFormField(
-              controller: _accountNameController,
-              decoration: const InputDecoration(
-                labelText: 'Account',
-                hintText: 'username or email',
-                prefixIcon: Icon(Icons.account_circle),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter an account name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _secretKeyController,
-              decoration: const InputDecoration(
-                labelText: 'Secret Key',
-                hintText: 'JBSWY3DPEHPK3PXP',
-                prefixIcon: Icon(Icons.key),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a secret key';
-                }
-
-                // Check if it's a valid base32 string
-                try {
-                  base32.decode(value.replaceAll(' ', ''));
-                } catch (e) {
-                  return 'Invalid base32 secret key';
-                }
-
-                return null;
-              },
-            ),
-            const SizedBox(height: 32),
-
-            ElevatedButton(
-              onPressed: _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('ADD ACCOUNT'),
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'SpaceMono',
+            fontSize: 12,
+            color: Colors.grey[400],
+            letterSpacing: 1.0,
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey[600],
+              fontFamily: 'SpaceMono',
+            ),
+            filled: true,
+            fillColor: theme.colorScheme.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: accentColor, width: 1),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            suffixIcon:
+                isSecret
+                    ? IconButton(
+                      icon: const Icon(Icons.content_paste, size: 20),
+                      onPressed: _pasteFromClipboard,
+                    )
+                    : null,
+          ),
+          style: const TextStyle(fontFamily: 'SpaceMono', letterSpacing: 0.5),
+          validator: validator,
+        ),
+      ],
     );
   }
 
-  /// Process a QR code from the scanner
-  void _processQRCode(String data) {
-    print("Processing QR code: $data");
-    // Handle otpauth URI format: otpauth://totp/ISSUER:ACCOUNT?secret=SECRET&issuer=ISSUER&algorithm=SHA1&digits=6&period=30
-    if (data.startsWith('otpauth://totp/')) {
-      try {
-        final Uri uri = Uri.parse(data);
-
-        // Parse label (ISSUER:ACCOUNT)
-        final String label = Uri.decodeComponent(uri.path.substring(1));
-        String issuer = '';
-        String account = label;
-
-        if (label.contains(':')) {
-          final parts = label.split(':');
-          issuer = parts[0];
-          account = parts[1];
-        }
-
-        // Override issuer if present in parameters
-        if (uri.queryParameters.containsKey('issuer')) {
-          issuer = uri.queryParameters['issuer']!;
-        }
-
-        final String secret = uri.queryParameters['secret'] ?? '';
-
-        if (secret.isEmpty) {
-          _showError('QR code missing secret key');
-          return;
-        }
-
-        // Validate secret is a valid base32 string
-        try {
-          base32.decode(secret.replaceAll(' ', ''));
-        } catch (e) {
-          _showError('Invalid secret key format');
-          return;
-        }
-
-        // Create and add the account directly
-        final newAccount = Account(
-          issuer: issuer,
-          accountName: account,
-          secretKey: secret.replaceAll(' ', ''),
-          algorithm: _algorithm,
-          digits: _digits,
-          period: _period,
-          colorCode: _colorCode,
-        );
-
-        print(
-          "Account created from QR: ${newAccount.issuer}, Secret: ${newAccount.secretKey}",
-        );
-
-        // Show a loading indicator
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return const AlertDialog(
-              content: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 20),
-                  Text("Adding account..."),
-                ],
-              ),
-            );
-          },
-        );
-
-        // Add the account and return to home screen
-        ref
-            .read(accountsProvider.notifier)
-            .addAccount(newAccount)
-            .then((_) {
-              print("Account added successfully from QR");
-              // Close the loading dialog
-              Navigator.of(context).pop();
-              // Return to home
-              Navigator.of(context).pop();
-            })
-            .catchError((error) {
-              // Close the loading dialog
-              Navigator.of(context).pop();
-              print("Error adding account from QR: $error");
-              _showError('Failed to add account: $error');
-            });
-      } catch (e) {
-        _showError('Invalid QR code format');
-      }
-    } else {
-      _showError('Unsupported QR code format');
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data != null && data.text != null) {
+      // Clean the secret (remove spaces and special chars)
+      final cleanedSecret = data.text!.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+      _secretController.text = cleanedSecret;
     }
   }
 
-  /// Submit the form to add a new account
-  void _submitForm() {
-    print("Submit form called");
+  void _saveAccount() async {
     if (_formKey.currentState!.validate()) {
-      print("Form validated");
-      final account = Account(
-        issuer: _issuerController.text,
-        accountName: _accountNameController.text,
-        secretKey: _secretKeyController.text.replaceAll(' ', ''),
-        algorithm: _algorithm,
-        digits: _digits,
-        period: _period,
-        colorCode: _colorCode,
-      );
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
 
-      print("Account created: ${account.issuer}, Secret: ${account.secretKey}");
+      try {
+        final secret = _secretController.text.trim().replaceAll(
+          RegExp(r'[^A-Za-z0-9]'),
+          '',
+        );
 
-      ref
-          .read(accountsProvider.notifier)
-          .addAccount(account)
-          .then((_) {
-            print("Account added successfully");
-            Navigator.of(context).pop();
-          })
-          .catchError((error) {
-            print("Error adding account: $error");
-            _showError('Failed to add account: $error');
-          });
-    } else {
-      print("Form validation failed");
+        // Validate the secret can generate a code using a temporary Account object
+        final tempAccount = Account(
+          issuer: _issuerController.text.trim(),
+          accountName: _accountNameController.text.trim(),
+          secretKey: secret,
+        );
+        await TOTPService.generateCode(tempAccount);
+
+        final account = Account(
+          issuer: _issuerController.text.trim(),
+          accountName: _accountNameController.text.trim(),
+          secretKey: secret,
+        );
+
+        await ref.read(accountsProvider.notifier).addAccount(account);
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Error adding account: ${e.toString()}';
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  /// Show error message
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
   }
 }

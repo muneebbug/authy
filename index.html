@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NothingOS 2FA</title>
+    <style>
+        :root {
+            --nothing-black: #121212;
+            --nothing-white: #ffffff;
+            --nothing-gray-100: #f5f5f5;
+            --nothing-gray-200: #e0e0e0;
+            --nothing-gray-300: #c0c0c0;
+            --nothing-gray-400: #a0a0a0;
+            --nothing-gray-500: #808080;
+            --nothing-gray-600: #606060;
+            --nothing-gray-700: #404040;
+            --nothing-gray-800: #303030;
+            --nothing-gray-900: #212121;
+            --nothing-accent: #33ffcc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Space Mono", monospace;
+        }
+
+        body {
+            background-color: var(--nothing-black);
+            color: var(--nothing-white);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 440px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 12px 0;
+        }
+
+        .menu-icon, .more-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .menu-icon div {
+            height: 1px;
+            background-color: var(--nothing-white);
+            width: 16px;
+        }
+
+        .page-title {
+            font-weight: 400;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .codes-list {
+            margin-top: 16px;
+        }
+
+        .code-card {
+            background-color: var(--nothing-gray-900);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+            border: 1px solid var(--nothing-gray-800);
+        }
+
+        .active-code {
+            background-color: var(--nothing-black);
+            border: 1px solid var(--nothing-gray-700);
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .service-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .service-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .service-name {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--nothing-gray-300);
+        }
+
+        .service-email {
+            font-size: 10px;
+            color: var(--nothing-gray-500);
+        }
+
+        .code-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .otp-code {
+            font-size: 20px;
+            font-weight: 400;
+            letter-spacing: 3px;
+            font-family: "Space Mono", monospace;
+        }
+
+        .timer {
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .timer-circle {
+            fill: none;
+            stroke: var(--nothing-accent);
+            stroke-width: 2;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-bg {
+            fill: none;
+            stroke: var(--nothing-gray-800);
+            stroke-width: 2;
+        }
+
+        .digit-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .digit {
+            width: 32px;
+            height: 40px;
+            background-color: var(--nothing-gray-900);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--nothing-white);
+        }
+
+        .add-button {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--nothing-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--nothing-black);
+            font-size: 24px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(51, 255, 204, 0.2);
+        }
+
+        .dot-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.05;
+            background-image: 
+                radial-gradient(circle, var(--nothing-white) 1px, transparent 1px);
+            background-size: 16px 16px;
+            z-index: -1;
+        }
+
+        /* QR Code Scanner View - Hidden by default */
+        .scanner-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--nothing-black);
+            display: none;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .scanner-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scanner-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .scanner-frame {
+            width: 240px;
+            height: 240px;
+            border: 1px solid var(--nothing-accent);
+            position: relative;
+        }
+
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--nothing-accent);
+            animation: scanAnimation 2s infinite linear;
+        }
+
+        .scanner-footer {
+            padding: 24px;
+            text-align: center;
+        }
+
+        .manual-entry-btn {
+            background: none;
+            border: 1px solid var(--nothing-gray-700);
+            padding: 8px 16px;
+            color: var(--nothing-white);
+            border-radius: 24px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        @keyframes scanAnimation {
+            0% {
+                top: 0;
+            }
+            50% {
+                top: calc(100% - 2px);
+            }
+            100% {
+                top: 0;
+            }
+        }
+
+        /* Import dot matrix font */
+        @font-face {
+            font-family: 'Space Mono';
+            src: url('https://fonts.gstatic.com/s/spacemono/v6/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2') format('woff2');
+            font-display: swap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dot-pattern"></div>
+        
+        <header class="app-header">
+            <div class="menu-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <h1 class="page-title">Home</h1>
+            <div class="more-icon">⋮</div>
+        </header>
+
+        <div class="codes-list">
+            <!-- Bing Account -->
+            <div class="code-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background-color: #0078d7;">
+                        <span style="color: white;">b</span>
+                    </div>
+                    <div>
+                        <div class="service-name">Bing</div>
+                        <div class="service-email">username@email.com</div>
+                    </div>
+                </div>
+                <div class="code-display">
+                    <div class="otp-code">
+                        <span>1</span>
+                        <span>3</span>
+                        <span>5</span>
+                        <span>7</span>
+                        <span>9</span>
+                        <span>0</span>
+                    </div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
+                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="15.7"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Account -->
+            <div class="code-card active-code">
+                <div class="service-info">
+                    <div class="service-icon">
+                        <img src="/api/placeholder/24/24" alt="Google Icon" />
+                    </div>
+                    <div>
+                        <div class="service-name">Google</div>
+                        <div class="service-email">name@gmail.com</div>
+                    </div>
+                </div>
+                <div class="code-display">
+                    <div class="otp-code">
+                        <span>2</span>
+                        <span>4</span>
+                        <span>6</span>
+                        <span>8</span>
+                        <span>0</span>
+                        <span>9</span>
+                    </div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
+                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="31.4"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dribbble Account -->
+            <div class="code-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background-color: #ea4c89;">
+                        <span style="color: white;">d</span>
+                    </div>
+                    <div>
+                        <div class="service-name">Dribbble</div>
+                        <div class="service-email">design@email.com</div>
+                    </div>
+                </div>
+                <div class="code-display">
+                    <div class="otp-code">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                        <span>6</span>
+                    </div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
+                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="47.1"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GitHub Account -->
+            <div class="code-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background-color: #333;">
+                        <span style="color: white;">G</span>
+                    </div>
+                    <div>
+                        <div class="service-name">GitHub</div>
+                        <div class="service-email">dev@github.com</div>
+                    </div>
+                </div>
+                <div class="code-display">
+                    <div class="otp-code">
+                        <span>0</span>
+                        <span>1</span>
+                        <span>2</span>
+                        <span>8</span>
+                        <span>3</span>
+                        <span>7</span>
+                    </div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
+                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="40.8"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Twitter Account -->
+            <div class="code-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background-color: #1da1f2;">
+                        <span style="color: white;">T</span>
+                    </div>
+                    <div>
+                        <div class="service-name">Twitter</div>
+                        <div class="service-email">social@email.com</div>
+                    </div>
+                </div>
+                <div class="code-display">
+                    <div class="otp-code">
+                        <span>9</span>
+                        <span>0</span>
+                        <span>8</span>
+                        <span>1</span>
+                        <span>7</span>
+                        <span>2</span>
+                    </div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
+                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="22"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="add-button">+</button>
+    </div>
+
+    <!-- QR Scanner View (Hidden initially) -->
+    <div class="scanner-view">
+        <div class="scanner-header">
+            <div class="back-button">←</div>
+            <div class="page-title">Scan QR Code</div>
+            <div></div>
+        </div>
+        <div class="scanner-area">
+            <div class="scanner-frame">
+                <div class="scanner-line"></div>
+            </div>
+        </div>
+        <div class="scanner-footer">
+            <button class="manual-entry-btn">Manual Entry</button>
+        </div>
+    </div>
+
+    <script>
+        // Simulate countdown timers
+        document.addEventListener('DOMContentLoaded', function() {
+            const timerCircles = document.querySelectorAll('.timer-circle');
+            
+            // Update timers randomly for demo
+            timerCircles.forEach(circle => {
+                const totalLength = 2 * Math.PI * 10; // 2πr where r=10
+                circle.setAttribute('stroke-dasharray', totalLength);
+                
+                // Random starting point
+                let offset = Math.random() * totalLength;
+                circle.setAttribute('stroke-dashoffset', offset);
+                
+                // Update timer every second
+                setInterval(() => {
+                    offset = (offset + totalLength/30) % totalLength; // 30 second cycle
+                    circle.setAttribute('stroke-dashoffset', offset);
+                }, 1000);
+            });
+            
+            // Show scanner when add button is clicked
+            const addButton = document.querySelector('.add-button');
+            const scannerView = document.querySelector('.scanner-view');
+            const backButton = document.querySelector('.back-button');
+            
+            addButton.addEventListener('click', () => {
+                scannerView.style.display = 'flex';
+            });
+            
+            backButton.addEventListener('click', () => {
+                scannerView.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

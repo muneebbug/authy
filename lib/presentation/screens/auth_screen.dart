@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:authy/core/utils/auth_service.dart';
+import 'package:authy/presentation/widgets/dot_pattern_background.dart';
 
 /// Screen for authenticating the user with PIN or biometric
 class AuthScreen extends StatefulWidget {
@@ -101,66 +102,73 @@ class _AuthScreenState extends State<AuthScreen> {
 
     // Otherwise, show the auth screen
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.6),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.security, size: 80, color: Colors.white),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Authentication Required',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Please authenticate to access your accounts',
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Show PIN entry if PIN auth is enabled
-                  if (_authMethod == AuthMethod.pin) _buildPinAuthUI(),
-
-                  // Show biometric button if available
-                  if (_authMethod == AuthMethod.biometric &&
-                      _isBiometricAvailable)
-                    _buildBiometricAuthUI(),
-
-                  if (_errorMessage.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+      body: Stack(
+        children: [
+          // Dot pattern background
+          const DotPatternBackground(opacity: 0.03),
+          // Gradient container
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0.2),
+                  Theme.of(context).primaryColor.withOpacity(0.1),
                 ],
               ),
             ),
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.security, size: 80, color: Colors.white),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Authentication Required',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please authenticate to access your accounts',
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Show PIN entry if PIN auth is enabled
+                      if (_authMethod == AuthMethod.pin) _buildPinAuthUI(),
+
+                      // Show biometric button if available
+                      if (_authMethod == AuthMethod.biometric &&
+                          _isBiometricAvailable)
+                        _buildBiometricAuthUI(),
+
+                      if (_errorMessage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                            _errorMessage,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

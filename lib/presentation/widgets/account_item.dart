@@ -5,7 +5,7 @@ import 'package:authy/domain/entities/account.dart';
 import 'package:authy/presentation/providers/account_provider.dart';
 import 'package:authy/core/utils/totp_service.dart';
 
-/// Widget to display a 2FA account in the list
+/// Widget to display a 2FA account in the list with Nothing OS style
 class AccountItem extends ConsumerStatefulWidget {
   /// The account to display
   final Account account;
@@ -123,13 +123,13 @@ class _AccountItemState extends ConsumerState<AccountItem> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
+
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -137,8 +137,8 @@ class _AccountItemState extends ConsumerState<AccountItem> {
             children: [
               Row(
                 children: [
-                  // Account icon or initials
-                  _buildAccountIcon(),
+                  // Account avatar
+                  _buildAccountAvatar(),
                   const SizedBox(width: 12),
 
                   // Account details
@@ -151,13 +151,15 @@ class _AccountItemState extends ConsumerState<AccountItem> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
                         Text(
                           widget.account.accountName,
                           style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                            fontSize: 13,
+                            color: Colors.grey[400],
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
@@ -165,22 +167,35 @@ class _AccountItemState extends ConsumerState<AccountItem> {
                   ),
 
                   // Time indicator
-                  _buildTimeIndicator(),
+                  SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: Stack(
+                      children: [
+                        CircularProgressIndicator(
+                          value: _remainingSeconds / widget.account.period,
+                          backgroundColor: Colors.grey.shade800,
+                          strokeWidth: 1.5,
+                          color: accentColor,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              // TOTP code
+              // TOTP code dots
               Center(
                 child:
                     _isLoading
                         ? const SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
                         )
-                        : _buildTOTPCode(),
+                        : _buildNothingStyleCode(),
               ),
             ],
           ),
@@ -189,80 +204,106 @@ class _AccountItemState extends ConsumerState<AccountItem> {
     );
   }
 
-  /// Build the account icon or initials
-  Widget _buildAccountIcon() {
+  /// Build the account avatar in Nothing-style
+  Widget _buildAccountAvatar() {
+    final Color dotColor;
+
+    // Select dot color based on issuer name (first letter) for variety
+    switch (widget.account.issuer.toLowerCase().isEmpty
+        ? 'x'
+        : widget.account.issuer.toLowerCase()[0]) {
+      case 'a':
+      case 'b':
+      case 'c':
+        dotColor = Colors.blue;
+        break;
+      case 'd':
+      case 'e':
+      case 'f':
+        dotColor = Colors.pink;
+        break;
+      case 'g':
+      case 'h':
+      case 'i':
+        dotColor = Colors.amber;
+        break;
+      case 'j':
+      case 'k':
+      case 'l':
+        dotColor = Colors.green;
+        break;
+      case 'm':
+      case 'n':
+      case 'o':
+        dotColor = Colors.purple;
+        break;
+      case 'p':
+      case 'q':
+      case 'r':
+        dotColor = Colors.red;
+        break;
+      case 's':
+      case 't':
+      case 'u':
+        dotColor = Colors.teal;
+        break;
+      default:
+        dotColor = Colors.grey;
+    }
+
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Color(widget.account.colorCode),
+        color: Colors.black,
         shape: BoxShape.circle,
+        border: Border.all(color: dotColor, width: 1.0),
       ),
       child: Center(
         child: Text(
           widget.account.issuer.isEmpty
               ? '?'
               : widget.account.issuer[0].toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+          style: TextStyle(
+            color: dotColor,
+            fontSize: 18,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
     );
   }
 
-  /// Build time remaining indicator
-  Widget _buildTimeIndicator() {
-    final progress = _remainingSeconds / widget.account.period;
-
-    return SizedBox(
-      width: 30,
-      height: 30,
-      child: Stack(
-        children: [
-          CircularProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[300],
-            strokeWidth: 3,
-            color: progress < 0.25 ? Colors.red : null,
-          ),
-          Center(
-            child: Text(
-              '$_remainingSeconds',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build the TOTP code with proper spacing
-  Widget _buildTOTPCode() {
+  /// Build the Nothing OS style TOTP code display with dot-matrix numbers
+  Widget _buildNothingStyleCode() {
     if (_currentCode == null) {
-      return const Text(
-        'Error generating code',
-        style: TextStyle(color: Colors.red),
+      return Center(
+        child: Text(
+          '------',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontFamily: 'monospace'),
+        ),
       );
     }
 
-    // Format code with spaces for better readability
-    String formattedCode = '';
-    for (int i = 0; i < _currentCode!.length; i++) {
-      formattedCode += _currentCode![i];
-      if (i % 3 == 2 && i < _currentCode!.length - 1) {
-        formattedCode += ' ';
-      }
-    }
+    final code = _currentCode!;
+    // Split TOTP code into two groups for better readability
+    // For example, '123456' -> '123 456'
+    final codeLength = code.length;
+    final firstHalf = code.substring(0, codeLength ~/ 2);
+    final secondHalf = code.substring(codeLength ~/ 2);
 
-    return Text(
-      formattedCode,
-      style: const TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
+    return RichText(
+      text: TextSpan(
+        style: Theme.of(
+          context,
+        ).textTheme.headlineSmall?.copyWith(fontFamily: 'monospace'),
+        children: [
+          TextSpan(text: firstHalf),
+          TextSpan(text: ' '),
+          TextSpan(text: secondHalf),
+        ],
       ),
     );
   }
