@@ -5,54 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NothingOS 2FA</title>
     <style>
-        :root {
-            --nothing-black: #121212;
-            --nothing-white: #ffffff;
-            --nothing-gray-100: #f5f5f5;
-            --nothing-gray-200: #e0e0e0;
-            --nothing-gray-300: #c0c0c0;
-            --nothing-gray-400: #a0a0a0;
-            --nothing-gray-500: #808080;
-            --nothing-gray-600: #606060;
-            --nothing-gray-700: #404040;
-            --nothing-gray-800: #303030;
-            --nothing-gray-900: #212121;
-            --nothing-accent: #33ffcc;
+        @font-face {
+            font-family: 'Nothing';
+            src: url('nothing-font.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Space Mono", monospace;
-        }
-
-        body {
-            background-color: var(--nothing-black);
-            color: var(--nothing-white);
-            font-size: 14px;
-            line-height: 1.5;
+            font-family: 'Nothing', 'Courier New', monospace;
             -webkit-font-smoothing: antialiased;
         }
 
-        .container {
-            max-width: 440px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
+        body {
+            background-color: #121212;
+            color: #fff;
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 420px;
+            margin: 0 auto;
+            position: relative;
             overflow: hidden;
         }
 
-        .app-header {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            padding: 12px 0;
+            padding: 20px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .menu-icon, .more-icon {
+        .header .menu-btn {
             width: 24px;
             height: 24px;
             display: flex;
@@ -61,449 +49,1115 @@
             cursor: pointer;
         }
 
-        .menu-icon div {
-            height: 1px;
-            background-color: var(--nothing-white);
-            width: 16px;
+        .header .menu-btn .line {
+            width: 24px;
+            height: 2px;
+            background-color: #fff;
         }
 
-        .page-title {
+        .header h1 {
+            font-size: 16px;
             font-weight: 400;
-            letter-spacing: 1px;
-            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
-        .codes-list {
-            margin-top: 16px;
+        .header .more-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .header .more-btn .dot {
+            width: 4px;
+            height: 4px;
+            background-color: #fff;
+            border-radius: 50%;
+            margin: 1px 0;
+        }
+
+        .codes-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
         }
 
         .code-card {
-            background-color: var(--nothing-gray-900);
-            border-radius: 12px;
+            background-color: #1E1E1E;
+            border-radius: 16px;
             padding: 16px;
-            margin-bottom: 12px;
-            position: relative;
-            border: 1px solid var(--nothing-gray-800);
-        }
-
-        .active-code {
-            background-color: var(--nothing-black);
-            border: 1px solid var(--nothing-gray-700);
-        }
-
-        .service-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .service-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .service-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .service-name {
-            font-size: 12px;
-            font-weight: 400;
-            color: var(--nothing-gray-300);
-        }
-
-        .service-email {
-            font-size: 10px;
-            color: var(--nothing-gray-500);
-        }
-
-        .code-display {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 8px;
-        }
-
-        .otp-code {
-            font-size: 20px;
-            font-weight: 400;
-            letter-spacing: 3px;
-            font-family: "Space Mono", monospace;
-        }
-
-        .timer {
-            width: 24px;
-            height: 24px;
+            margin-bottom: 16px;
             position: relative;
         }
 
-        .timer-circle {
-            fill: none;
-            stroke: var(--nothing-accent);
-            stroke-width: 2;
-            stroke-linecap: round;
-            transform: rotate(-90deg);
-            transform-origin: center;
-            transition: stroke-dashoffset 1s linear;
-        }
-
-        .timer-bg {
-            fill: none;
-            stroke: var(--nothing-gray-800);
-            stroke-width: 2;
-        }
-
-        .digit-group {
+        .code-card .service-info {
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
-        .digit {
+        .code-card .service-icon {
             width: 32px;
-            height: 40px;
-            background-color: var(--nothing-gray-900);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: var(--nothing-white);
-        }
-
-        .add-button {
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
-            width: 48px;
-            height: 48px;
+            height: 32px;
             border-radius: 50%;
-            background-color: var(--nothing-accent);
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            color: var(--nothing-black);
-            font-size: 24px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(51, 255, 204, 0.2);
+            color: #fff;
+            font-weight: bold;
+            margin-right: 12px;
+            text-transform: uppercase;
         }
 
-        .dot-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.05;
-            background-image: 
-                radial-gradient(circle, var(--nothing-white) 1px, transparent 1px);
-            background-size: 16px 16px;
-            z-index: -1;
-        }
-
-        /* QR Code Scanner View - Hidden by default */
-        .scanner-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--nothing-black);
-            display: none;
-            flex-direction: column;
-            z-index: 10;
-        }
-
-        .scanner-header {
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .scanner-area {
+        .code-card .service-details {
             flex: 1;
+        }
+
+        .code-card .service-name {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .code-card .account {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .code-card .code {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            justify-content: flex-start;
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
         }
 
-        .scanner-frame {
-            width: 240px;
-            height: 240px;
-            border: 1px solid var(--nothing-accent);
-            position: relative;
-        }
-
-        .scanner-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: var(--nothing-accent);
-            animation: scanAnimation 2s infinite linear;
-        }
-
-        .scanner-footer {
-            padding: 24px;
+        .code-card .code .digit {
+            font-size: 24px;
+            font-weight: 500;
+            margin-right: 12px;
+            width: 14px;
             text-align: center;
         }
 
-        .manual-entry-btn {
-            background: none;
-            border: 1px solid var(--nothing-gray-700);
-            padding: 8px 16px;
-            color: var(--nothing-white);
-            border-radius: 24px;
-            font-size: 12px;
+        .code-card .timer-container {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .code-card .timer {
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .code-card .timer svg {
+            transform: rotate(-90deg);
+        }
+
+        .code-card .timer circle {
+            fill: transparent;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .code-card .timer .bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .code-card .timer .progress {
+            stroke: #00E5B0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .add-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #00E5B0;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
             cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 229, 176, 0.3);
+            z-index: 10;
         }
 
-        @keyframes scanAnimation {
-            0% {
-                top: 0;
-            }
-            50% {
-                top: calc(100% - 2px);
-            }
-            100% {
-                top: 0;
-            }
+        .bottom-nav {
+            height: 5px;
+            width: 40%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 16px auto;
         }
 
-        /* Import dot matrix font */
-        @font-face {
-            font-family: 'Space Mono';
-            src: url('https://fonts.gstatic.com/s/spacemono/v6/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2') format('woff2');
-            font-display: swap;
+        /* QR Scanner Screen */
+        .qr-scanner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+        }
+
+        .qr-scanner.active {
+            display: flex;
+        }
+
+        .qr-scanner-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 16px;
+        }
+
+        .qr-scanner-header .back-btn {
+            margin-right: 16px;
+            cursor: pointer;
+            color: #00E5B0;
+        }
+
+        .qr-scanner-header h2 {
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .qr-scanner-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .qr-frame {
+            width: 240px;
+            height: 240px;
+            border: 2px solid #00E5B0;
+            position: relative;
+        }
+
+        .qr-frame::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #00E5B0;
+        }
+
+        .qr-scanner-footer {
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .manual-entry-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
+        /* Service colors */
+        .bing { background-color: #0078D7; }
+        .google { background-color: #4285F4; }
+        .dribbble { background-color: #EA4C89; }
+        .github { background-color: #333; }
+        .twitter { background-color: #1DA1F2; }
+
+        /* Sidebar Styles */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background-color: #1A1A1A;
+            z-index: 100;
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 24px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #00E5B0;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-right: 12px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .menu-item.active {
+            background-color: rgba(0, 229, 176, 0.1);
+            border-left: 3px solid #00E5B0;
+            padding-left: 13px;
+        }
+
+        .menu-item.active .menu-icon,
+        .menu-item.active .menu-label {
+            color: #00E5B0;
+        }
+
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .menu-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .sidebar-footer {
+            padding: 16px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Settings Screen Styles */
+        .settings-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+        }
+
+        .settings-screen.active {
+            display: flex;
+        }
+
+        .settings-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            font-size: 14px;
+            color: #00E5B0;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background-color: #1E1E1E;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .setting-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .setting-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .setting-details {
+            flex: 1;
+        }
+
+        .setting-name {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+        }
+
+        .setting-arrow {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #00E5B0;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Color Options */
+        .color-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-option {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-option.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 2px #121212, 0 0 0 4px rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="dot-pattern"></div>
-        
-        <header class="app-header">
-            <div class="menu-icon">
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
-            <h1 class="page-title">Home</h1>
-            <div class="more-icon">⋮</div>
-        </header>
-
-        <div class="codes-list">
-            <!-- Bing Account -->
-            <div class="code-card">
-                <div class="service-info">
-                    <div class="service-icon" style="background-color: #0078d7;">
-                        <span style="color: white;">b</span>
-                    </div>
-                    <div>
-                        <div class="service-name">Bing</div>
-                        <div class="service-email">username@email.com</div>
-                    </div>
-                </div>
-                <div class="code-display">
-                    <div class="otp-code">
-                        <span>1</span>
-                        <span>3</span>
-                        <span>5</span>
-                        <span>7</span>
-                        <span>9</span>
-                        <span>0</span>
-                    </div>
-                    <div class="timer">
-                        <svg viewBox="0 0 24 24">
-                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
-                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="15.7"></circle>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Google Account -->
-            <div class="code-card active-code">
-                <div class="service-info">
-                    <div class="service-icon">
-                        <img src="/api/placeholder/24/24" alt="Google Icon" />
-                    </div>
-                    <div>
-                        <div class="service-name">Google</div>
-                        <div class="service-email">name@gmail.com</div>
-                    </div>
-                </div>
-                <div class="code-display">
-                    <div class="otp-code">
-                        <span>2</span>
-                        <span>4</span>
-                        <span>6</span>
-                        <span>8</span>
-                        <span>0</span>
-                        <span>9</span>
-                    </div>
-                    <div class="timer">
-                        <svg viewBox="0 0 24 24">
-                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
-                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="31.4"></circle>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dribbble Account -->
-            <div class="code-card">
-                <div class="service-info">
-                    <div class="service-icon" style="background-color: #ea4c89;">
-                        <span style="color: white;">d</span>
-                    </div>
-                    <div>
-                        <div class="service-name">Dribbble</div>
-                        <div class="service-email">design@email.com</div>
-                    </div>
-                </div>
-                <div class="code-display">
-                    <div class="otp-code">
-                        <span>1</span>
-                        <span>2</span>
-                        <span>3</span>
-                        <span>4</span>
-                        <span>5</span>
-                        <span>6</span>
-                    </div>
-                    <div class="timer">
-                        <svg viewBox="0 0 24 24">
-                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
-                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="47.1"></circle>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- GitHub Account -->
-            <div class="code-card">
-                <div class="service-info">
-                    <div class="service-icon" style="background-color: #333;">
-                        <span style="color: white;">G</span>
-                    </div>
-                    <div>
-                        <div class="service-name">GitHub</div>
-                        <div class="service-email">dev@github.com</div>
-                    </div>
-                </div>
-                <div class="code-display">
-                    <div class="otp-code">
-                        <span>0</span>
-                        <span>1</span>
-                        <span>2</span>
-                        <span>8</span>
-                        <span>3</span>
-                        <span>7</span>
-                    </div>
-                    <div class="timer">
-                        <svg viewBox="0 0 24 24">
-                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
-                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="40.8"></circle>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Twitter Account -->
-            <div class="code-card">
-                <div class="service-info">
-                    <div class="service-icon" style="background-color: #1da1f2;">
-                        <span style="color: white;">T</span>
-                    </div>
-                    <div>
-                        <div class="service-name">Twitter</div>
-                        <div class="service-email">social@email.com</div>
-                    </div>
-                </div>
-                <div class="code-display">
-                    <div class="otp-code">
-                        <span>9</span>
-                        <span>0</span>
-                        <span>8</span>
-                        <span>1</span>
-                        <span>7</span>
-                        <span>2</span>
-                    </div>
-                    <div class="timer">
-                        <svg viewBox="0 0 24 24">
-                            <circle class="timer-bg" cx="12" cy="12" r="10"></circle>
-                            <circle class="timer-circle" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="22"></circle>
-                        </svg>
-                    </div>
+    <!-- Sidebar Menu -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-profile">
+                <div class="user-avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Account</div>
+                    <div class="user-email">user@example.com</div>
                 </div>
             </div>
         </div>
-
-        <button class="add-button">+</button>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <div class="menu-item active" data-page="home">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </div>
+                    <div class="menu-label">Home</div>
+                </div>
+                <div class="menu-item" data-page="settings">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </div>
+                    <div class="menu-label">Settings</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <div class="menu-label">Security</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <div class="menu-label">Backup</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </div>
+                    <div class="menu-label">About</div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="menu-item">
+                <div class="menu-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </div>
+                <div class="menu-label">Sign Out</div>
+            </div>
+        </div>
+    </div>
+    <!-- Main Screen -->
+    <div class="header">
+        <div class="menu-btn">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </div>
+        <h1>Home</h1>
+        <div class="more-btn">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
     </div>
 
-    <!-- QR Scanner View (Hidden initially) -->
-    <div class="scanner-view">
-        <div class="scanner-header">
-            <div class="back-button">←</div>
-            <div class="page-title">Scan QR Code</div>
-            <div></div>
+    <div class="codes-container" id="codesContainer">
+        <!-- Code cards will be added here dynamically -->
+    </div>
+
+    <div class="add-btn" id="addBtn">+</div>
+    <div class="bottom-nav"></div>
+
+    <!-- QR Scanner Screen -->
+    <div class="qr-scanner" id="qrScanner">
+        <div class="qr-scanner-header">
+            <div class="back-btn" id="backBtn">←</div>
+            <h2>Scan QR Code</h2>
         </div>
-        <div class="scanner-area">
-            <div class="scanner-frame">
-                <div class="scanner-line"></div>
-            </div>
+        <div class="qr-scanner-content">
+            <div class="qr-frame"></div>
         </div>
-        <div class="scanner-footer">
+        <div class="qr-scanner-footer">
             <button class="manual-entry-btn">Manual Entry</button>
         </div>
     </div>
 
+    <!-- Settings Screen -->
+    <div class="settings-screen" id="settingsScreen">
+        <div class="header">
+            <div class="menu-btn" id="settingsMenuBtn">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+            <h1>Settings</h1>
+            <div class="more-btn">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <div class="settings-section">
+                <div class="section-header">Security</div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Biometric Authentication</div>
+                            <div class="setting-description">Use fingerprint to unlock the app</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">App Lock</div>
+                            <div class="setting-description">Lock app when closed</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">PIN Code</div>
+                            <div class="setting-description">Set a PIN for additional security</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="setting-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-header">Appearance</div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Theme</div>
+                            <div class="setting-description">Dark mode</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Accent Color</div>
+                            <div class="setting-description">Change app accent color</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="color-options">
+                            <div class="color-option active" style="background-color: #00E5B0;"></div>
+                            <div class="color-option" style="background-color: #FF5E7D;"></div>
+                            <div class="color-option" style="background-color: #7C5DFA;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-header">Data & Backup</div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <polyline points="23 20 23 14 17 14"></polyline>
+                                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Auto Backup</div>
+                            <div class="setting-description">Backup accounts to cloud</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Export Accounts</div>
+                            <div class="setting-description">Export as encrypted file</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="setting-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Import Accounts</div>
+                            <div class="setting-description">Import from file</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="setting-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-header">About</div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Version</div>
+                            <div class="setting-description">1.0.0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Follow Us</div>
+                            <div class="setting-description">Stay updated</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="setting-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <div class="setting-details">
+                            <div class="setting-name">Contact Support</div>
+                            <div class="setting-description">Get help</div>
+                        </div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="setting-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Simulate countdown timers
-        document.addEventListener('DOMContentLoaded', function() {
-            const timerCircles = document.querySelectorAll('.timer-circle');
+        // Sample data for demonstration
+        const accounts = [
+            { service: 'Bing', account: 'username@email.com', code: '13579', icon: 'b', color: 'bing' },
+            { service: 'Google', account: 'name@gmail.com', code: '24680', icon: 'g', color: 'google' },
+            { service: 'Dribbble', account: 'design@email.com', code: '123456', icon: 'd', color: 'dribbble' },
+            { service: 'GitHub', account: 'dev@github.com', code: '012837', icon: 'g', color: 'github' },
+            { service: 'Twitter', account: 'social@email.com', code: '90817', icon: 't', color: 'twitter' }
+        ];
+
+        // DOM Elements
+        const codesContainer = document.getElementById('codesContainer');
+        const addBtn = document.getElementById('addBtn');
+        const qrScanner = document.getElementById('qrScanner');
+        const backBtn = document.getElementById('backBtn');
+
+        // Create a code card
+        function createCodeCard(account) {
+            const card = document.createElement('div');
+            card.className = 'code-card';
             
-            // Update timers randomly for demo
-            timerCircles.forEach(circle => {
-                const totalLength = 2 * Math.PI * 10; // 2πr where r=10
-                circle.setAttribute('stroke-dasharray', totalLength);
+            // Service info section
+            const serviceInfo = document.createElement('div');
+            serviceInfo.className = 'service-info';
+            
+            const serviceIcon = document.createElement('div');
+            serviceIcon.className = `service-icon ${account.color}`;
+            serviceIcon.textContent = account.icon;
+            
+            const serviceDetails = document.createElement('div');
+            serviceDetails.className = 'service-details';
+            
+            const serviceName = document.createElement('div');
+            serviceName.className = 'service-name';
+            serviceName.textContent = account.service;
+            
+            const accountName = document.createElement('div');
+            accountName.className = 'account';
+            accountName.textContent = account.account;
+            
+            serviceDetails.appendChild(serviceName);
+            serviceDetails.appendChild(accountName);
+            
+            serviceInfo.appendChild(serviceIcon);
+            serviceInfo.appendChild(serviceDetails);
+            
+            // Code section
+            const codeElement = document.createElement('div');
+            codeElement.className = 'code';
+            
+            // Split the code into individual digits
+            for (let i = 0; i < account.code.length; i++) {
+                const digit = document.createElement('div');
+                digit.className = 'digit';
+                digit.textContent = account.code[i];
+                codeElement.appendChild(digit);
+            }
+            
+            // Timer container
+            const timerContainer = document.createElement('div');
+            timerContainer.className = 'timer-container';
+            
+            const timer = document.createElement('div');
+            timer.className = 'timer';
+            
+            // SVG for circular progress
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "24");
+            svg.setAttribute("height", "24");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            
+            const circleRadius = 10;
+            const circumference = 2 * Math.PI * circleRadius;
+            
+            // Background circle
+            const bgCircle = document.createElementNS(svgNS, "circle");
+            bgCircle.setAttribute("class", "bg");
+            bgCircle.setAttribute("cx", "12");
+            bgCircle.setAttribute("cy", "12");
+            bgCircle.setAttribute("r", circleRadius);
+            
+            // Progress circle
+            const progressCircle = document.createElementNS(svgNS, "circle");
+            progressCircle.setAttribute("class", "progress");
+            progressCircle.setAttribute("cx", "12");
+            progressCircle.setAttribute("cy", "12");
+            progressCircle.setAttribute("r", circleRadius);
+            progressCircle.setAttribute("stroke-dasharray", circumference);
+            progressCircle.setAttribute("stroke-dashoffset", "0");
+            
+            svg.appendChild(bgCircle);
+            svg.appendChild(progressCircle);
+            timer.appendChild(svg);
+            
+            timerContainer.appendChild(timer);
+            
+            // Append all elements to the card
+            card.appendChild(serviceInfo);
+            card.appendChild(codeElement);
+            card.appendChild(timerContainer);
+            
+            // Start the timer animation
+            startTimer(progressCircle, circumference);
+            
+            return card;
+        }
+
+        // Start timer animation
+        function startTimer(progressCircle, circumference) {
+            // Set initial state
+            let timeLeft = 30; // 30 seconds for TOTP
+            
+            // Update timer every second
+            const interval = setInterval(() => {
+                timeLeft--;
+                const offset = circumference * (1 - timeLeft / 30);
+                progressCircle.setAttribute("stroke-dashoffset", offset);
                 
-                // Random starting point
-                let offset = Math.random() * totalLength;
-                circle.setAttribute('stroke-dashoffset', offset);
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    // In a real app, we would generate a new code here
+                    // For demo purposes, we'll just restart the timer
+                    startTimer(progressCircle, circumference);
+                }
+            }, 1000);
+        }
+
+        // Initialize the app
+        function initApp() {
+            // Create code cards for each account
+            accounts.forEach(account => {
+                const card = createCodeCard(account);
+                codesContainer.appendChild(card);
+            });
+        }
+
+        // Event listeners
+        addBtn.addEventListener('click', () => {
+            qrScanner.classList.add('active');
+        });
+
+        backBtn.addEventListener('click', () => {
+            qrScanner.classList.remove('active');
+        });
+
+        // Initialize the app
+        initApp();
+
+        // Sidebar and Settings functionality
+        const menuBtn = document.querySelector('.menu-btn');
+        const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const settingsScreen = document.getElementById('settingsScreen');
+        const menuItems = document.querySelectorAll('.menu-item');
+        const colorOptions = document.querySelectorAll('.color-option');
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        }
+
+        // Open sidebar
+        menuBtn.addEventListener('click', toggleSidebar);
+        settingsMenuBtn.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking overlay
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Handle menu item clicks
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active class from all menu items
+                menuItems.forEach(i => i.classList.remove('active'));
                 
-                // Update timer every second
-                setInterval(() => {
-                    offset = (offset + totalLength/30) % totalLength; // 30 second cycle
-                    circle.setAttribute('stroke-dashoffset', offset);
-                }, 1000);
+                // Add active class to clicked item
+                item.classList.add('active');
+                
+                // Handle page navigation
+                const page = item.getAttribute('data-page');
+                if (page === 'home') {
+                    settingsScreen.classList.remove('active');
+                } else if (page === 'settings') {
+                    settingsScreen.classList.add('active');
+                }
+                
+                // Close sidebar
+                toggleSidebar();
             });
-            
-            // Show scanner when add button is clicked
-            const addButton = document.querySelector('.add-button');
-            const scannerView = document.querySelector('.scanner-view');
-            const backButton = document.querySelector('.back-button');
-            
-            addButton.addEventListener('click', () => {
-                scannerView.style.display = 'flex';
-            });
-            
-            backButton.addEventListener('click', () => {
-                scannerView.style.display = 'none';
+        });
+
+        // Handle color option clicks
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove active class from all color options
+                colorOptions.forEach(o => o.classList.remove('active'));
+                
+                // Add active class to clicked option
+                option.classList.add('active');
+                
+                // Get the selected color
+                const color = option.style.backgroundColor;
+                
+                // Update accent color (in a real app, this would update CSS variables)
+                document.documentElement.style.setProperty('--accent-color', color);
+                
+                // Update all elements with the accent color
+                const accentElements = document.querySelectorAll('.progress');
+                accentElements.forEach(el => {
+                    el.style.stroke = color;
+                });
+                
+                // Update add button color
+                document.getElementById('addBtn').style.backgroundColor = color;
             });
         });
     </script>

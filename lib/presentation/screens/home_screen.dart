@@ -8,6 +8,8 @@ import 'package:authy/presentation/providers/account_provider.dart';
 import 'package:authy/presentation/widgets/account_item.dart';
 import 'package:authy/presentation/screens/add_account_screen.dart';
 import 'package:authy/presentation/widgets/dot_pattern_background.dart';
+import 'package:authy/core/theme/app_theme.dart';
+import '../widgets/app_drawer.dart';
 
 /// Home screen that displays all accounts with Nothing OS design
 class HomeScreen extends ConsumerStatefulWidget {
@@ -18,17 +20,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     // Watch the accounts list
     final accounts = ref.watch(accountsProvider);
-    final theme = Theme.of(context);
-    final accentColor = theme.colorScheme.primary;
+    final accentColorIndex = ref.watch(accentColorProvider);
+    final accentColor = AppTheme.getAccentColor(accentColorIndex);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      key: _scaffoldKey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Home', style: GoogleFonts.spaceMono(letterSpacing: 1.0)),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
+        title: Text('AUTHY', style: GoogleFonts.spaceMono(letterSpacing: 1.0)),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -38,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(),
       body: Stack(
         children: [
           // Dot pattern background

@@ -1,0 +1,579 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:authy/core/theme/app_theme.dart';
+import 'package:authy/presentation/widgets/dot_pattern_background.dart';
+
+/// Settings screen with NothingOS design
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accentColorIndex = ref.watch(accentColorProvider);
+    final accentColor = AppTheme.getAccentColor(accentColorIndex);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'SETTINGS',
+          style: GoogleFonts.spaceMono(
+            letterSpacing: 1.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, size: 24),
+            onPressed: () {
+              // More options menu - placeholder
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Dot pattern background
+          const DotPatternBackground(),
+
+          // Main content
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                // Security section
+                _buildSectionTitle('SECURITY', accentColor),
+                const SizedBox(height: 12),
+
+                _buildSettingsItem(
+                  icon: Icons.fingerprint,
+                  title: 'Biometric Authentication',
+                  subtitle: 'Use fingerprint to unlock the app',
+                  trailing: Switch(
+                    value: true, // Placeholder
+                    onChanged: (value) {
+                      // Placeholder
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.lock,
+                  title: 'App Lock',
+                  subtitle: 'Lock app when closed',
+                  trailing: Switch(
+                    value: true, // Placeholder
+                    onChanged: (value) {
+                      // Placeholder
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.star,
+                  title: 'PIN Code',
+                  subtitle: 'Set a PIN for additional security',
+                  trailing: const Icon(Icons.navigate_next),
+                  onTap: () {
+                    // Placeholder
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Appearance section
+                _buildSectionTitle('APPEARANCE', accentColor),
+                const SizedBox(height: 12),
+
+                _buildSettingsItem(
+                  icon: Icons.brightness_6,
+                  title: 'Theme',
+                  subtitle: 'Dark mode',
+                  trailing: Switch(
+                    value: true, // Always dark for now
+                    onChanged: null,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.palette,
+                  title: 'Accent Color',
+                  subtitle: 'Change app accent color',
+                  trailing: SizedBox(
+                    width: 140,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Show the current selected color with a larger circle
+                        Container(
+                          width: 28,
+                          height: 28,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Show a few preview colors balanced around the selected color
+                        ..._buildPreviewColors(accentColorIndex, ref),
+                      ],
+                    ),
+                  ),
+                  onTap: () {
+                    _showColorPickerSheet(context, ref, accentColorIndex);
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Data & Backup section
+                _buildSectionTitle('DATA & BACKUP', accentColor),
+                const SizedBox(height: 12),
+
+                _buildSettingsItem(
+                  icon: Icons.sync,
+                  title: 'Auto Backup',
+                  subtitle: 'Backup accounts to cloud',
+                  trailing: Switch(
+                    value: false, // Placeholder
+                    onChanged: (value) {
+                      // Placeholder
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.download,
+                  title: 'Export Accounts',
+                  subtitle: 'Export as encrypted file',
+                  trailing: const Icon(Icons.navigate_next),
+                  onTap: () {
+                    // Placeholder
+                  },
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.upload,
+                  title: 'Import Accounts',
+                  subtitle: 'Import from file',
+                  trailing: const Icon(Icons.navigate_next),
+                  onTap: () {
+                    // Placeholder
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // About section
+                _buildSectionTitle('ABOUT', accentColor),
+                const SizedBox(height: 12),
+
+                _buildSettingsItem(
+                  icon: Icons.info,
+                  title: 'Version',
+                  subtitle: '1.0.0',
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.group,
+                  title: 'Follow Us',
+                  subtitle: 'Stay updated',
+                  trailing: const Icon(Icons.navigate_next),
+                  onTap: () {
+                    // Placeholder
+                  },
+                ),
+
+                const SizedBox(height: 8),
+                _buildSettingsItem(
+                  icon: Icons.email,
+                  title: 'Contact Support',
+                  subtitle: 'Get help',
+                  trailing: const Icon(Icons.navigate_next),
+                  onTap: () {
+                    // Placeholder
+                  },
+                ),
+
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build section title
+  Widget _buildSectionTitle(String title, Color accentColor) {
+    return Text(
+      title,
+      style: GoogleFonts.spaceMono(
+        color: accentColor,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.0,
+      ),
+    );
+  }
+
+  // Build an individual settings item
+  Widget _buildSettingsItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      decoration: AppTheme.settingsItemDecoration(),
+      margin: const EdgeInsets.only(bottom: 1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon),
+              ),
+              const SizedBox(width: 16),
+
+              // Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.spaceMono(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.spaceMono(
+                        color: Colors.grey[400],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Trailing widget (switch, button, etc)
+              if (trailing != null) trailing,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Build a color option for the quick selection
+  Widget _buildColorOption(
+    WidgetRef ref,
+    int index,
+    Color color,
+    bool isSelected,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        ref.read(accentColorProvider.notifier).state = index;
+      },
+      child: Container(
+        width: isSelected ? 28 : 18,
+        height: isSelected ? 28 : 18,
+        margin: const EdgeInsets.only(left: 4),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.transparent,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Show bottom sheet with all color options
+  void _showColorPickerSheet(
+    BuildContext context,
+    WidgetRef ref,
+    int currentIndex,
+  ) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true, // Allow the sheet to be taller
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          constraints: BoxConstraints(
+            maxHeight:
+                MediaQuery.of(context).size.height *
+                0.7, // Limit height to 70% of screen
+          ),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle at the top
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade600,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Select Accent Color',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                Text(
+                  'Choose from 10 beautiful colors',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 14,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Current selected color preview
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppTheme.getAccentColor(currentIndex),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.getAccentColor(
+                                currentIndex,
+                              ).withOpacity(0.4),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Show the color name
+                      Text(
+                        AppTheme.accentColorNames[currentIndex],
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getAccentColor(currentIndex),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Color grid with constrained width
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: screenWidth - 40, // Allow some padding
+                    ),
+                    child: Wrap(
+                      spacing:
+                          screenWidth < 360
+                              ? 12
+                              : 16, // Smaller spacing on small screens
+                      runSpacing:
+                          20, // Slightly reduced to prevent vertical overflow
+                      alignment: WrapAlignment.center,
+                      children: List.generate(AppTheme.accentColors.length, (
+                        index,
+                      ) {
+                        // Calculate size based on screen width to fit 5 colors per row on any screen
+                        final colorSize = ((screenWidth - 80) / 5).clamp(
+                          40.0,
+                          50.0,
+                        );
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Color option
+                            GestureDetector(
+                              onTap: () {
+                                ref.read(accentColorProvider.notifier).state =
+                                    index;
+                                Navigator.pop(context);
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: colorSize,
+                                height: colorSize,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentColors[index],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color:
+                                        index == currentIndex
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.accentColors[index]
+                                          .withOpacity(
+                                            index == currentIndex ? 0.4 : 0.2,
+                                          ),
+                                      blurRadius: index == currentIndex ? 8 : 4,
+                                      spreadRadius:
+                                          index == currentIndex ? 1 : 0,
+                                    ),
+                                  ],
+                                ),
+                                child:
+                                    index == currentIndex
+                                        ? const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                        )
+                                        : null,
+                              ),
+                            ),
+
+                            // Small label below current selection
+                            if (index == currentIndex) ...[
+                              const SizedBox(height: 4),
+                              SizedBox(
+                                width: colorSize + 10,
+                                child: Text(
+                                  AppTheme.accentColorNames[index],
+                                  style: GoogleFonts.spaceMono(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Build a few preview colors balanced around the selected color
+  List<Widget> _buildPreviewColors(int currentIndex, WidgetRef ref) {
+    final colors = AppTheme.accentColors;
+    final List<Widget> previewColors = [];
+
+    // Select 3 other colors to show as preview (plus "more" indicator)
+    // Always display the same colors regardless of selection to avoid overflow
+    List<int> indicesToShow = [0, 2, 5, 7];
+
+    // Remove current index if it's in the preview list
+    if (indicesToShow.contains(currentIndex)) {
+      indicesToShow.remove(currentIndex);
+    }
+
+    // Only show first 3 colors from the list
+    indicesToShow = indicesToShow.take(3).toList();
+
+    // Add the preview color circles
+    for (int i in indicesToShow) {
+      previewColors.add(
+        _buildColorOption(ref, i, AppTheme.accentColors[i], false),
+      );
+    }
+
+    // Add a "more" indicator
+    previewColors.add(
+      Container(
+        width: 18,
+        height: 18,
+        margin: const EdgeInsets.only(left: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade800,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_horiz, size: 12, color: Colors.white70),
+      ),
+    );
+
+    return previewColors;
+  }
+}
