@@ -14,6 +14,18 @@ final appLockProvider = StateNotifierProvider<AppLockNotifier, bool>(
   (ref) => AppLockNotifier(),
 );
 
+/// Provider that indicates whether authentication is actually required
+/// This combines the app lock setting and auth method
+final authRequiredProvider = Provider<bool>((ref) {
+  final appLockEnabled = ref.watch(appLockProvider);
+  final authMethod = ref.watch(authMethodProvider);
+
+  // Authentication is required only if:
+  // 1. App lock is enabled AND
+  // 2. An auth method is set (either PIN, biometric, or both)
+  return appLockEnabled && authMethod != AuthMethod.none;
+});
+
 /// Provider for biometric authentication availability
 final biometricAvailableProvider = FutureProvider<bool>((ref) async {
   try {
@@ -62,6 +74,9 @@ class AuthMethodNotifier extends StateNotifier<AuthMethod> {
         case 'biometric':
           method = AuthMethod.biometric;
           break;
+        case 'both':
+          method = AuthMethod.both;
+          break;
         default:
           // If not found in settings service, try the older storage
           method = await AuthService.getAuthMethod();
@@ -87,33 +102,46 @@ class AuthMethodNotifier extends StateNotifier<AuthMethod> {
 
   Future<void> setPin(String pin) async {
     await AuthService.setPin(pin);
-    await _updateSettingsServiceAuthMethod(AuthMethod.pin);
-    state = AuthMethod.pin;
+    // The updated method will handle proper state based on whether biometric is also enabled
+    final newAuthMethod = await AuthService.getAuthMethod();
+    await _updateSettingsServiceAuthMethod(newAuthMethod);
+    state = newAuthMethod;
   }
 
   Future<bool> setBiometric() async {
-    final biometricAvailable = await AuthService.isBiometricAvailable();
-    if (biometricAvailable) {
-      try {
-        await AuthService.setAuthMethod(AuthMethod.biometric);
-        await _updateSettingsServiceAuthMethod(AuthMethod.biometric);
-        state = AuthMethod.biometric;
-        LoggerUtil.info('Biometric authentication enabled successfully');
-        return true;
-      } catch (e) {
-        LoggerUtil.error('Error enabling biometric authentication', e);
-        return false;
+    try {
+      final success = await AuthService.enableBiometric();
+      if (success) {
+        // Get the updated auth method which might be 'both' if PIN is also set
+        final newAuthMethod = await AuthService.getAuthMethod();
+        await _updateSettingsServiceAuthMethod(newAuthMethod);
+        state = newAuthMethod;
       }
-    } else {
-      LoggerUtil.warning('Biometrics not available, cannot enable');
+      return success;
+    } catch (e) {
+      LoggerUtil.error('Error enabling biometric authentication', e);
       return false;
     }
+  }
+
+  Future<void> disableBiometric() async {
+    await AuthService.disableBiometric();
+    final newAuthMethod = await AuthService.getAuthMethod();
+    await _updateSettingsServiceAuthMethod(newAuthMethod);
+    state = newAuthMethod;
   }
 
   Future<void> removeAuthentication() async {
     await AuthService.removeAuthentication();
     await _updateSettingsServiceAuthMethod(AuthMethod.none);
     state = AuthMethod.none;
+  }
+
+  Future<void> removePin() async {
+    await AuthService.removePin();
+    final newAuthMethod = await AuthService.getAuthMethod();
+    await _updateSettingsServiceAuthMethod(newAuthMethod);
+    state = newAuthMethod;
   }
 
   // Update settings service with auth method
@@ -125,6 +153,9 @@ class AuthMethodNotifier extends StateNotifier<AuthMethod> {
         break;
       case AuthMethod.biometric:
         methodString = 'biometric';
+        break;
+      case AuthMethod.both:
+        methodString = 'both';
         break;
       default:
         methodString = 'none';
@@ -173,6 +204,7 @@ class AppLockNotifier extends StateNotifier<bool> {
 
   Future<bool> _getAppLockSetting() async {
     final authMethod = await AuthService.getAuthMethod();
+    // For safety, if no auth method is set, don't enable app lock
     if (authMethod == AuthMethod.none) {
       return false;
     }
@@ -182,17 +214,20 @@ class AppLockNotifier extends StateNotifier<bool> {
   }
 
   Future<void> setAppLock(bool enabled) async {
-    // If we're enabling app lock, make sure we have authentication set up
-    if (enabled) {
-      final authMethod = await AuthService.getAuthMethod();
-      if (authMethod == AuthMethod.none) {
-        // Cannot enable app lock without an authentication method
-        return;
-      }
+    // Safety check - don't allow app lock if no auth method
+    final authMethod = await AuthService.getAuthMethod();
+    if (enabled && authMethod == AuthMethod.none) {
+      LoggerUtil.warning('Cannot enable app lock without auth method');
+      return;
     }
 
+    // Update storage
     await AuthService.setSecureStorageValue(_appLockKey, enabled.toString());
+
+    // Update settings service
     await SettingsService.setSetting('security.appLockEnabled', enabled);
+
+    // Update state
     state = enabled;
   }
 }

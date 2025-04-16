@@ -67,12 +67,59 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSectionTitle('SECURITY', accentColor),
                 const SizedBox(height: 12),
 
+                // App Lock moved to top
+                _buildSettingsItem(
+                  icon: Icons.lock,
+                  title: 'App Lock',
+                  subtitle:
+                      authMethod != AuthMethod.none
+                          ? appLockEnabled
+                              ? 'Master toggle for all authentication'
+                              : 'Disabled - app will not require authentication'
+                          : 'Set up PIN or biometric first to enable',
+                  trailing: Switch(
+                    value: appLockEnabled,
+                    onChanged:
+                        authMethod != AuthMethod.none
+                            ? (value) async {
+                              await ref
+                                  .read(appLockProvider.notifier)
+                                  .setAppLock(value);
+
+                              // Show confirmation message
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      value
+                                          ? 'App Lock enabled'
+                                          : 'App Lock disabled - authentication will be skipped',
+                                    ),
+                                    backgroundColor:
+                                        value ? Colors.green : Colors.blue,
+                                  ),
+                                );
+                              }
+                            }
+                            : null,
+                  ),
+                  description:
+                      appLockEnabled == false && authMethod != AuthMethod.none
+                          ? 'Authentication will be skipped even though you have ${_getAuthMethodDescription(authMethod)} set up.'
+                          : null,
+                ),
+
+                const SizedBox(height: 8),
+
                 _buildSettingsItem(
                   icon: Icons.fingerprint,
                   title: 'Biometric Authentication',
                   subtitle:
                       biometricAvailable
-                          ? 'Use fingerprint to unlock the app'
+                          ? (authMethod == AuthMethod.biometric ||
+                                  authMethod == AuthMethod.both)
+                              ? 'Biometric authentication is enabled'
+                              : 'Use fingerprint to unlock the app'
                           : 'Not available on this device',
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -81,9 +128,14 @@ class SettingsScreen extends ConsumerWidget {
                           ? TextButton(
                             style: TextButton.styleFrom(
                               backgroundColor:
-                                  authMethod == AuthMethod.biometric
-                                      ? Colors.green.withOpacity(0.2)
-                                      : Colors.grey.withOpacity(0.2),
+                                  (authMethod == AuthMethod.biometric ||
+                                          authMethod == AuthMethod.both)
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                        context,
+                                      ).colorScheme.primary.withOpacity(0.3),
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
@@ -91,7 +143,8 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             onPressed: () async {
                               try {
-                                if (authMethod != AuthMethod.biometric) {
+                                if (authMethod != AuthMethod.biometric &&
+                                    authMethod != AuthMethod.both) {
                                   // Try to enable biometric
                                   final authenticated =
                                       await AuthService.authenticateWithBiometrics();
@@ -99,47 +152,12 @@ class SettingsScreen extends ConsumerWidget {
                                     await ref
                                         .read(authMethodProvider.notifier)
                                         .setBiometric();
-
-                                    // Show success message
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Biometric authentication enabled',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    }
-                                  } else {
-                                    // Show error message
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Biometric authentication failed',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
                                   }
                                 } else {
                                   // Disable biometric
-                                  final hasPin = await AuthService.hasPin();
-                                  if (hasPin) {
-                                    await ref
-                                        .read(authMethodProvider.notifier)
-                                        .setAuthMethod(AuthMethod.pin);
-                                  } else {
-                                    await ref
-                                        .read(authMethodProvider.notifier)
-                                        .removeAuthentication();
-                                  }
+                                  await ref
+                                      .read(authMethodProvider.notifier)
+                                      .disableBiometric();
 
                                   // Show confirmation
                                   if (context.mounted) {
@@ -154,10 +172,6 @@ class SettingsScreen extends ConsumerWidget {
                                   }
                                 }
                               } catch (e) {
-                                LoggerUtil.error(
-                                  'Error toggling biometric auth',
-                                  e,
-                                );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -169,69 +183,17 @@ class SettingsScreen extends ConsumerWidget {
                               }
                             },
                             child: Text(
-                              authMethod == AuthMethod.biometric
-                                  ? 'ENABLED'
-                                  : 'ENABLE',
+                              (authMethod == AuthMethod.biometric ||
+                                      authMethod == AuthMethod.both)
+                                  ? 'Enabled'
+                                  : 'Enable',
                               style: TextStyle(
-                                color:
-                                    authMethod == AuthMethod.biometric
-                                        ? Colors.green
-                                        : Colors.white,
-                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
                           )
-                          : const Text(
-                            'Not Available',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          : const SizedBox.shrink(),
                     ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                _buildSettingsItem(
-                  icon: Icons.lock,
-                  title: 'App Lock',
-                  subtitle: 'Lock app when closed',
-                  trailing: Switch(
-                    value: appLockEnabled,
-                    onChanged:
-                        authMethod != AuthMethod.none
-                            ? (value) async {
-                              // If turning on app lock, make sure we have authentication
-                              if (value && authMethod == AuthMethod.none) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Please set up PIN or biometric authentication first',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              await ref
-                                  .read(appLockProvider.notifier)
-                                  .setAppLock(value);
-
-                              // Show confirmation message
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      value
-                                          ? 'App Lock enabled'
-                                          : 'App Lock disabled',
-                                    ),
-                                    backgroundColor:
-                                        value ? Colors.green : Colors.blue,
-                                  ),
-                                );
-                              }
-                            }
-                            : null,
                   ),
                 ),
 
@@ -240,30 +202,70 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.pin,
                   title: 'PIN Code',
                   subtitle:
-                      authMethod == AuthMethod.pin
+                      (authMethod == AuthMethod.pin ||
+                              authMethod == AuthMethod.both)
                           ? 'PIN is set for authentication'
                           : 'Set a PIN for additional security',
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (authMethod == AuthMethod.pin)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.redAccent,
-                          ),
-                          onPressed:
-                              () => _showRemovePinConfirmation(context, ref),
+                      if (authMethod == AuthMethod.pin ||
+                          authMethod == AuthMethod.both)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Modify PIN button
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white70,
+                              ),
+                              tooltip: 'Change PIN',
+                              onPressed:
+                                  () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const PinSetupScreen(
+                                            mode: PinScreenMode.modify,
+                                          ),
+                                    ),
+                                  ),
+                            ),
+                            // Remove PIN button
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              tooltip: 'Remove PIN',
+                              onPressed:
+                                  () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const PinSetupScreen(
+                                            mode: PinScreenMode.remove,
+                                          ),
+                                    ),
+                                  ),
+                            ),
+                          ],
                         ),
                       const Icon(Icons.navigate_next),
                     ],
                   ),
                   onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const PinSetupScreen(),
-                      ),
-                    );
+                    // Only navigate to PIN setup if PIN is not already set
+                    if (authMethod != AuthMethod.pin &&
+                        authMethod != AuthMethod.both) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => const PinSetupScreen(
+                                mode: PinScreenMode.create,
+                              ),
+                        ),
+                      );
+                    }
                   },
                 ),
 
@@ -326,13 +328,6 @@ class SettingsScreen extends ConsumerWidget {
                             color: accentColor,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withOpacity(0.3),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
                           ),
                         ),
                         // Show a few preview colors balanced around the selected color
@@ -467,6 +462,7 @@ class SettingsScreen extends ConsumerWidget {
     required String subtitle,
     Widget? trailing,
     VoidCallback? onTap,
+    String? description,
   }) {
     return Builder(
       builder: (context) {
@@ -481,52 +477,70 @@ class SettingsScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color:
-                          brightness == Brightness.dark
-                              ? Colors.black26
-                              : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Text
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.spaceMono(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: AppTheme.getOnSurfaceColor(brightness),
-                          ),
+                  Row(
+                    children: [
+                      // Icon
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color:
+                              brightness == Brightness.dark
+                                  ? Colors.black26
+                                  : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        Text(
-                          subtitle,
-                          style: GoogleFonts.spaceMono(
-                            color:
-                                brightness == Brightness.dark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[700],
-                            fontSize: 12,
-                          ),
+                        child: Icon(icon),
+                      ),
+                      const SizedBox(width: 16),
+
+                      // Text
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: GoogleFonts.spaceMono(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: AppTheme.getOnSurfaceColor(brightness),
+                              ),
+                            ),
+                            Text(
+                              subtitle,
+                              style: GoogleFonts.spaceMono(
+                                color:
+                                    brightness == Brightness.dark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Trailing widget (switch, button, etc)
+                      if (trailing != null) trailing,
+                    ],
                   ),
 
-                  // Trailing widget (switch, button, etc)
-                  if (trailing != null) trailing,
+                  // Description text (if provided)
+                  if (description != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 52),
+                      child: Text(
+                        description,
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -639,15 +653,6 @@ class SettingsScreen extends ConsumerWidget {
                           color: AppTheme.getAccentColor(currentIndex),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.getAccentColor(
-                                currentIndex,
-                              ).withOpacity(0.4),
-                              blurRadius: 12,
-                              spreadRadius: 2,
-                            ),
-                          ],
                         ),
                         child: const Icon(
                           Icons.check,
@@ -718,17 +723,6 @@ class SettingsScreen extends ConsumerWidget {
                                             : Colors.transparent,
                                     width: 2,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.accentColors[index]
-                                          .withOpacity(
-                                            index == currentIndex ? 0.4 : 0.2,
-                                          ),
-                                      blurRadius: index == currentIndex ? 8 : 4,
-                                      spreadRadius:
-                                          index == currentIndex ? 1 : 0,
-                                    ),
-                                  ],
                                 ),
                                 child:
                                     index == currentIndex
@@ -813,38 +807,6 @@ class SettingsScreen extends ConsumerWidget {
     return previewColors;
   }
 
-  // Show confirmation dialog for removing PIN
-  void _showRemovePinConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surface,
-            title: const Text('Remove PIN?'),
-            content: const Text(
-              'Removing the PIN will disable authentication. Your accounts will be accessible without verification.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () {
-                  ref.read(authMethodProvider.notifier).removeAuthentication();
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  'REMOVE',
-                  style: TextStyle(color: Colors.redAccent),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
   // Show settings export dialog
   void _showSettingsExportDialog(BuildContext context) async {
     // Get current settings
@@ -897,8 +859,6 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
     final isSelected = ref.watch(themeModeProvider) == mode;
-    final accentColorIndex = ref.watch(accentColorProvider);
-    final accentColor = AppTheme.getAccentColor(accentColorIndex);
 
     return TextButton(
       onPressed: () {
@@ -908,6 +868,7 @@ class SettingsScreen extends ConsumerWidget {
         padding: EdgeInsets.zero,
         minimumSize: const Size(50, 30),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        elevation: 0,
       ),
       child: Container(
         width: 50,
@@ -915,7 +876,7 @@ class SettingsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? accentColor
+                  ? Theme.of(context).colorScheme.primary
                   : brightness == Brightness.dark
                   ? Colors.black26
                   : Colors.grey.shade200,
@@ -925,7 +886,7 @@ class SettingsScreen extends ConsumerWidget {
           icon,
           color:
               isSelected
-                  ? AppTheme.getTextColor(accentColor)
+                  ? Theme.of(context).colorScheme.onPrimary
                   : brightness == Brightness.dark
                   ? Colors.grey[400]
                   : Colors.grey[700],
@@ -947,6 +908,20 @@ class SettingsScreen extends ConsumerWidget {
         return 'Dark mode';
       default:
         throw Exception('Unknown theme mode');
+    }
+  }
+
+  // Add a helper method for auth method description
+  String _getAuthMethodDescription(AuthMethod method) {
+    switch (method) {
+      case AuthMethod.pin:
+        return 'PIN';
+      case AuthMethod.biometric:
+        return 'biometric';
+      case AuthMethod.both:
+        return 'PIN and biometric';
+      default:
+        return 'no authentication';
     }
   }
 }

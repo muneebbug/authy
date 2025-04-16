@@ -8,15 +8,15 @@ class DotPatternBackground extends StatelessWidget {
   /// The spacing between dots, defaults to 16
   final double spacing;
 
-  /// The color of the dots, defaults to white
-  final Color color;
+  /// The color of the dots, defaults to null which will use theme-based color
+  final Color? color;
 
   /// Creates a dot pattern background
   const DotPatternBackground({
     Key? key,
     this.opacity = 0.05,
     this.spacing = 16,
-    this.color = Colors.white,
+    this.color,
   }) : super(key: key);
 
   @override
@@ -24,11 +24,17 @@ class DotPatternBackground extends StatelessWidget {
     // Use MediaQuery to get the screen size
     final size = MediaQuery.of(context).size;
 
+    // Determine dot color based on theme if not explicitly provided
+    final brightness = Theme.of(context).brightness;
+    final themeBasedColor =
+        brightness == Brightness.dark ? Colors.white : Colors.black;
+    final dotColor = color ?? themeBasedColor;
+
     return SizedBox.fromSize(
       size: size,
       child: CustomPaint(
         painter: DotPatternPainter(
-          dotColor: color.withOpacity(opacity),
+          dotColor: dotColor.withOpacity(opacity),
           spacing: spacing,
         ),
         size: size,

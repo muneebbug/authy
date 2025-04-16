@@ -276,11 +276,12 @@ class _ImportAccountsScreenState extends ConsumerState<ImportAccountsScreen> {
             child: ElevatedButton(
               onPressed: _importAccounts,
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: AppTheme.getTextColor(accentColor),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                elevation: 0,
                 minimumSize: const Size(250, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: const Text('IMPORT ACCOUNTS'),
@@ -365,11 +366,12 @@ class _ImportAccountsScreenState extends ConsumerState<ImportAccountsScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: AppTheme.getTextColor(accentColor),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                elevation: 0,
                 minimumSize: const Size(200, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: const Text('DONE'),

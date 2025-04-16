@@ -72,15 +72,25 @@ class SecureStorageService {
 
   /// Decrypt an encrypted string value
   static String decrypt(String encryptedValue) {
-    if (_encrypter == null) {
-      throw Exception('SecureStorageService not initialized');
+    try {
+      if (_encrypter == null) {
+        throw Exception('SecureStorageService not initialized');
+      }
+
+      final encryptedData = jsonDecode(encryptedValue);
+      final encrypted = Encrypted.fromBase64(encryptedData['data']);
+      final iv = IV(base64Decode(encryptedData['iv']));
+
+      return _encrypter!.decrypt(encrypted, iv: iv);
+    } catch (e, stack) {
+      LoggerUtil.error("Error decrypting value", e, stack);
+      // For decryption errors, we'll throw a more specific exception
+      // that can be handled by the app's error handling
+      throw SecureStorageDecryptionException(
+        'Failed to decrypt stored data. The encryption key may have changed.',
+        originalException: e,
+      );
     }
-
-    final encryptedData = jsonDecode(encryptedValue);
-    final encrypted = Encrypted.fromBase64(encryptedData['data']);
-    final iv = IV(base64Decode(encryptedData['iv']));
-
-    return _encrypter!.decrypt(encrypted, iv: iv);
   }
 
   /// Store a securely encrypted value in secure storage
@@ -91,12 +101,30 @@ class SecureStorageService {
 
   /// Retrieve and decrypt a value from secure storage
   static Future<String?> getSecureValue(String key) async {
-    final encryptedValue = await _secureStorage.read(key: key);
-    if (encryptedValue == null) {
-      return null;
-    }
+    try {
+      final encryptedValue = await _secureStorage.read(key: key);
+      if (encryptedValue == null) {
+        return null;
+      }
 
-    return decrypt(encryptedValue);
+      return decrypt(encryptedValue);
+    } catch (e, stack) {
+      LoggerUtil.error("Error getting secure value for key: $key", e, stack);
+
+      // If it's a decryption exception, we could handle it specially
+      if (e is SecureStorageDecryptionException) {
+        // For now, return null as if the key doesn't exist
+        // In a real app, you might want to handle this differently,
+        // such as showing a specific error message or resetting the key
+        LoggerUtil.warning(
+          "Decryption failed for key: $key. Treating as non-existent value.",
+        );
+        return null;
+      }
+
+      // For other exceptions, rethrow
+      rethrow;
+    }
   }
 
   /// Remove a value from secure storage
@@ -108,4 +136,15 @@ class SecureStorageService {
   static Future<void> clearAll() async {
     await _secureStorage.deleteAll();
   }
+}
+
+/// Custom exception for secure storage decryption errors
+class SecureStorageDecryptionException implements Exception {
+  final String message;
+  final Object? originalException;
+
+  SecureStorageDecryptionException(this.message, {this.originalException});
+
+  @override
+  String toString() => 'SecureStorageDecryptionException: $message';
 }

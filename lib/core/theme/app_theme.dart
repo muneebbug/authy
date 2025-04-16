@@ -244,14 +244,18 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: darkSurface,
-          foregroundColor: darkOnSurface,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: accentColor,
+          foregroundColor: textOnAccent,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          minimumSize: const Size(200, 50),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: accentColor, width: 1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          textStyle: GoogleFonts.spaceMono(fontSize: 14, letterSpacing: 1.0),
+          textStyle: GoogleFonts.spaceMono(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
         ),
       ),
 
@@ -393,14 +397,18 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: lightSurface,
-          foregroundColor: lightOnSurface,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: accentColor,
+          foregroundColor: textOnAccent,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          minimumSize: const Size(200, 50),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: accentColor, width: 1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          textStyle: GoogleFonts.spaceMono(fontSize: 14, letterSpacing: 1.0),
+          textStyle: GoogleFonts.spaceMono(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
         ),
       ),
 

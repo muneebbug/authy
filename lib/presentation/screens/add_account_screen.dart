@@ -66,18 +66,20 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
+    final backgroundColor = theme.scaffoldBackgroundColor;
+    final textColor = theme.textTheme.bodyLarge?.color;
 
     // Return QR Scanner or manual entry form based on state
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
           _showQrScanner ? 'Scan QR Code' : 'Add Account',
           style: GoogleFonts.spaceMono(letterSpacing: 1.0),
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: backgroundColor,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () {
             if (_showQrScanner) {
               Navigator.of(context).pop();
@@ -162,7 +164,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -170,7 +172,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
-                  side: BorderSide(color: Colors.grey.shade700),
+                  side: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.5),
+                  ),
                 ),
               ),
               child: Text(
@@ -233,7 +239,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Invalid QR code: ${e.toString()}'),
-          backgroundColor: Colors.red.shade900,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -309,19 +315,26 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade900.withOpacity(0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.error.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade900),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade400),
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _errorMessage!,
                             style: GoogleFonts.spaceMono(
-                              color: Colors.red.shade400,
+                              color: Theme.of(context).colorScheme.error,
                             ),
                           ),
                         ),
@@ -334,10 +347,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveAccount,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: accentColor,
-                      foregroundColor: Colors.black,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     child:
@@ -347,7 +361,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             )
                             : Text(
@@ -368,6 +382,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
   }
 
   Widget _buildHeaderText() {
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+    final subtitleColor = Theme.of(context).textTheme.bodyMedium?.color;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -376,7 +393,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
           style: GoogleFonts.spaceMono(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[300],
+            color: textColor,
             letterSpacing: 0.5,
           ),
         ),
@@ -385,7 +402,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
           'Enter the details of your 2FA account',
           style: GoogleFonts.spaceMono(
             fontSize: 14,
-            color: Colors.grey[500],
+            color: subtitleColor,
             letterSpacing: 0.3,
           ),
         ),
@@ -402,6 +419,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
   }) {
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
+    final labelColor = theme.textTheme.labelMedium?.color;
+    final hintColor = theme.hintColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,7 +429,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
           label,
           style: GoogleFonts.spaceMono(
             fontSize: 12,
-            color: Colors.grey[400],
+            color: labelColor,
             letterSpacing: 1.0,
           ),
         ),
@@ -419,7 +438,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen>
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.spaceMono(color: Colors.grey[600]),
+            hintStyle: GoogleFonts.spaceMono(color: hintColor),
             filled: true,
             fillColor: theme.colorScheme.surface,
             border: OutlineInputBorder(

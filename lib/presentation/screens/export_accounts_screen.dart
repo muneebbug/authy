@@ -215,7 +215,19 @@ class _ExportAccountsScreenState extends ConsumerState<ExportAccountsScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        ElevatedButton(onPressed: _startExport, child: const Text('TRY AGAIN')),
+        ElevatedButton(
+          onPressed: _startExport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            elevation: 0,
+            minimumSize: const Size(200, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text('TRY AGAIN'),
+        ),
       ],
     );
   }
@@ -223,6 +235,7 @@ class _ExportAccountsScreenState extends ConsumerState<ExportAccountsScreen> {
   /// Build the export complete state widget
   Widget _buildExportCompleteState(Color accentColor) {
     final words = _passphrase.split(' ');
+    final onAccentColor = AppTheme.getTextColor(accentColor);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -297,6 +310,9 @@ class _ExportAccountsScreenState extends ConsumerState<ExportAccountsScreen> {
                 onPressed: _copyPassphrase,
                 icon: const Icon(Icons.copy),
                 label: const Text('COPY PASSPHRASE'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ],
           ),
@@ -317,9 +333,13 @@ class _ExportAccountsScreenState extends ConsumerState<ExportAccountsScreen> {
           icon: const Icon(Icons.share),
           label: const Text('SHARE EXPORT FILE'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: accentColor,
-            foregroundColor: AppTheme.getTextColor(accentColor),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            elevation: 0,
             minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         ),
       ],

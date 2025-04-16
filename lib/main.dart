@@ -35,46 +35,119 @@ void main() async {
     ),
   );
 
-  // Essential initializations before showing UI
-  await Hive.initFlutter();
-  await SecureStorageService.init();
-  await SettingsService.init();
+  try {
+    // Essential initializations before showing UI
+    await Hive.initFlutter();
 
-  // Create repositories
-  final accountRepository = await AccountRepositoryImpl.create();
-  final hiveRepository = HiveRepository();
-  await hiveRepository.init();
+    // Initialize secure storage with error handling
+    try {
+      await SecureStorageService.init();
+    } catch (e, stack) {
+      LoggerUtil.error('Error initializing secure storage', e, stack);
+      // We'll continue and handle secure storage errors later
+    }
 
-  // Set portrait orientation
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    await SettingsService.init();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        accountRepositoryProvider.overrideWithValue(accountRepository),
-        hiveRepositoryProvider.overrideWithValue(hiveRepository),
-      ],
-      child: const SentinelApp(),
-    ),
-  );
+    // Create repositories
+    final accountRepository = await AccountRepositoryImpl.create();
+    final hiveRepository = HiveRepository();
+    await hiveRepository.init();
 
-  // Defer non-essential initialization for after UI is shown
-  _performBackgroundInitialization();
+    // Set portrait orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    runApp(
+      ProviderScope(
+        overrides: [
+          accountRepositoryProvider.overrideWithValue(accountRepository),
+          hiveRepositoryProvider.overrideWithValue(hiveRepository),
+        ],
+        child: const SentinelApp(),
+      ),
+    );
+
+    // Defer non-essential initialization for after UI is shown
+    _performBackgroundInitialization();
+  } catch (e, stack) {
+    LoggerUtil.error('Critical error during app initialization', e, stack);
+    // Show error UI to user
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error Starting App',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'An unexpected error occurred: ${e.toString()}',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    // Restart app (this is a simplified approach)
+                    WidgetsBinding.instance.reassembleApplication();
+                  },
+                  child: const Text('Restart App'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Perform non-essential initialization tasks in the background
 Future<void> _performBackgroundInitialization() async {
-  // Migrate any existing settings
-  await AuthService.initializeAndMigrate();
+  try {
+    // Try to recover from any secure storage errors
+    bool recoveryNeeded = false;
 
-  // Pre-check biometric availability to speed up UI
-  await AuthService.isBiometricAvailable();
+    try {
+      // Test if we can access secure storage
+      await AuthService.getSecureStorageValue('test_recovery');
+    } catch (e) {
+      LoggerUtil.warning('Secure storage error detected, attempting recovery');
+      recoveryNeeded = true;
+    }
 
-  // Initialize time synchronization in background
-  await TOTPService.initializeTimeSync();
+    if (recoveryNeeded) {
+      // Attempt to recover secure storage
+      final recovered = await AuthService.attemptStorageRecovery();
+      if (recovered) {
+        LoggerUtil.info('Successfully recovered from secure storage error');
+      } else {
+        LoggerUtil.warning(
+          'Secure storage was reset due to irrecoverable error',
+        );
+      }
+    }
+
+    // Migrate any existing settings
+    await AuthService.initializeAndMigrate();
+
+    // Pre-check biometric availability to speed up UI
+    await AuthService.isBiometricAvailable();
+
+    // Initialize time synchronization in background
+    await TOTPService.initializeTimeSync();
+  } catch (e, stack) {
+    LoggerUtil.error('Error in background initialization', e, stack);
+    // Non-critical error, app can continue
+  }
 }
 
 /// Main application widget
@@ -149,7 +222,17 @@ class _SentinelAppState extends ConsumerState<SentinelApp>
           });
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      LoggerUtil.error('Error checking initial lock state', e, stack);
+
+      // Attempt recovery if this might be a secure storage error
+      try {
+        // Try to recover secure storage in case that's the problem
+        await AuthService.attemptStorageRecovery();
+      } catch (recoveryError) {
+        LoggerUtil.error('Failed to recover from storage error', recoveryError);
+      }
+
       // In case of error, default to unlocked
       if (mounted) {
         setState(() {
